@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1767339672720" clover="3.2.0">
+  <project timestamp="1767339672720" name="All files">
+    <metrics statements="151" coveredstatements="55" conditionals="62" coveredconditionals="15" methods="31" coveredmethods="8" elements="244" coveredelements="78" complexity="0" loc="151" ncloc="151" packages="1" files="4" classes="4"/>
+    <file name="adminService.js" path="/Users/shiva/Documents/github_projects/Campus-Eats-React-Native-App/mobile/src/services/adminService.js">
+      <metrics statements="27" coveredstatements="6" conditionals="14" coveredconditionals="2" methods="8" coveredmethods="2"/>
+      <line num="8" count="1" type="stmt"/>
+      <line num="15" count="1" type="stmt"/>
+      <line num="22" count="1" type="stmt"/>
+      <line num="45" count="1" type="stmt"/>
+      <line num="57" count="0" type="stmt"/>
+      <line num="62" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="63" count="0" type="stmt"/>
+      <line num="65" count="0" type="stmt"/>
+      <line num="74" count="0" type="stmt"/>
+      <line num="89" count="0" type="stmt"/>
+      <line num="100" count="2" type="stmt"/>
+      <line num="105" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="112" count="0" type="stmt"/>
+      <line num="113" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="114" count="0" type="stmt"/>
+      <line num="121" count="0" type="stmt"/>
+      <line num="134" count="0" type="stmt"/>
+      <line num="135" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="136" count="0" type="stmt"/>
+      <line num="137" count="0" type="stmt"/>
+      <line num="142" count="0" type="stmt"/>
+      <line num="144" count="0" type="stmt"/>
+      <line num="149" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="150" count="0" type="stmt"/>
+      <line num="151" count="0" type="stmt"/>
+      <line num="154" count="0" type="stmt"/>
+      <line num="171" count="0" type="stmt"/>
+    </file>
+    <file name="authService.js" path="/Users/shiva/Documents/github_projects/Campus-Eats-React-Native-App/mobile/src/services/authService.js">
+      <metrics statements="48" coveredstatements="21" conditionals="8" coveredconditionals="4" methods="5" coveredmethods="2"/>
+      <line num="8" count="1" type="stmt"/>
+      <line num="15" count="2" type="stmt"/>
+      <line num="17" count="2" type="stmt"/>
+      <line num="20" count="2" type="stmt"/>
+      <line num="27" count="2" type="stmt"/>
+      <line num="28" count="2" type="stmt"/>
+      <line num="30" count="2" type="stmt"/>
+      <line num="31" count="2" type="stmt"/>
+      <line num="36" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="37" count="1" type="stmt"/>
+      <line num="38" count="1" type="stmt"/>
+      <line num="41" count="0" type="stmt"/>
+      <line num="44" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="45" count="1" type="stmt"/>
+      <line num="46" count="1" type="stmt"/>
+      <line num="51" count="1" type="stmt"/>
+      <line num="54" count="0" type="stmt"/>
+      <line num="58" count="2" type="stmt"/>
+      <line num="60" count="0" type="stmt"/>
+      <line num="71" count="1" type="stmt"/>
+      <line num="73" count="1" type="stmt"/>
+      <line num="76" count="1" type="stmt"/>
+      <line num="79" count="1" type="stmt"/>
+      <line num="92" count="1" type="stmt"/>
+      <line num="94" count="0" type="stmt"/>
+      <line num="102" count="0" type="stmt"/>
+      <line num="103" count="0" type="stmt"/>
+      <line num="105" count="0" type="stmt"/>
+      <line num="113" count="0" type="stmt"/>
+      <line num="114" count="0" type="stmt"/>
+      <line num="116" count="0" type="stmt"/>
+      <line num="117" count="0" type="stmt"/>
+      <line num="120" count="0" type="stmt"/>
+      <line num="121" count="0" type="stmt"/>
+      <line num="126" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="127" count="0" type="stmt"/>
+      <line num="128" count="0" type="stmt"/>
+      <line num="133" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="134" count="0" type="stmt"/>
+      <line num="135" count="0" type="stmt"/>
+      <line num="140" count="0" type="stmt"/>
+      <line num="143" count="0" type="stmt"/>
+      <line num="147" count="0" type="stmt"/>
+      <line num="149" count="0" type="stmt"/>
+      <line num="157" count="0" type="stmt"/>
+      <line num="159" count="0" type="stmt"/>
+      <line num="160" count="0" type="stmt"/>
+      <line num="167" count="0" type="stmt"/>
+    </file>
+    <file name="menuService.js" path="/Users/shiva/Documents/github_projects/Campus-Eats-React-Native-App/mobile/src/services/menuService.js">
+      <metrics statements="39" coveredstatements="15" conditionals="19" coveredconditionals="4" methods="6" coveredmethods="2"/>
+      <line num="9" count="1" type="stmt"/>
+      <line num="14" count="1" type="stmt"/>
+      <line num="27" count="2" type="stmt"/>
+      <line num="28" count="2" type="stmt"/>
+      <line num="31" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="32" count="1" type="stmt"/>
+      <line num="35" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="36" count="0" type="stmt"/>
+      <line num="37" count="0" type="stmt"/>
+      <line num="38" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="39" count="0" type="stmt"/>
+      <line num="41" count="1" type="stmt"/>
+      <line num="42" count="1" type="stmt"/>
+      <line num="43" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="44" count="1" type="stmt"/>
+      <line num="51" count="1" type="stmt"/>
+      <line num="52" count="1" type="stmt"/>
+      <line num="54" count="1" type="stmt"/>
+      <line num="58" count="2" type="stmt"/>
+      <line num="74" count="0" type="stmt"/>
+      <line num="76" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="77" count="0" type="stmt"/>
+      <line num="79" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="80" count="0" type="stmt"/>
+      <line num="81" count="0" type="stmt"/>
+      <line num="82" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="83" count="0" type="stmt"/>
+      <line num="85" count="0" type="stmt"/>
+      <line num="86" count="0" type="stmt"/>
+      <line num="87" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="88" count="0" type="stmt"/>
+      <line num="95" count="0" type="stmt"/>
+      <line num="96" count="0" type="stmt"/>
+      <line num="99" count="0" type="stmt"/>
+      <line num="112" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="113" count="0" type="stmt"/>
+      <line num="120" count="0" type="stmt"/>
+      <line num="121" count="0" type="stmt"/>
+      <line num="128" count="0" type="stmt"/>
+    </file>
+    <file name="orderService.js" path="/Users/shiva/Documents/github_projects/Campus-Eats-React-Native-App/mobile/src/services/orderService.js">
+      <metrics statements="37" coveredstatements="13" conditionals="21" coveredconditionals="5" methods="12" coveredmethods="2"/>
+      <line num="36" count="1" type="stmt"/>
+      <line num="38" count="1" type="stmt"/>
+      <line num="42" count="1" type="stmt"/>
+      <line num="43" count="1" type="stmt"/>
+      <line num="50" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="125" count="1" type="stmt"/>
+      <line num="126" count="1" type="stmt"/>
+      <line num="134" count="1" type="stmt"/>
+      <line num="136" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="137" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="140" count="1" type="stmt"/>
+      <line num="141" count="1" type="stmt"/>
+      <line num="144" count="0" type="stmt"/>
+      <line num="145" count="0" type="stmt"/>
+      <line num="153" count="0" type="cond" truecount="0" falsecount="1"/>
+      <line num="156" count="0" type="stmt"/>
+      <line num="176" count="0" type="stmt"/>
+      <line num="179" count="0" type="stmt"/>
+      <line num="181" count="0" type="stmt"/>
+      <line num="187" count="0" type="stmt"/>
+      <line num="189" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="190" count="0" type="stmt"/>
+      <line num="191" count="0" type="stmt"/>
+      <line num="192" count="0" type="stmt"/>
+      <line num="195" count="0" type="stmt"/>
+      <line num="202" count="0" type="stmt"/>
+      <line num="203" count="0" type="stmt"/>
+      <line num="217" count="0" type="stmt"/>
+      <line num="218" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="219" count="0" type="stmt"/>
+      <line num="222" count="0" type="stmt"/>
+      <line num="236" count="1" type="stmt"/>
+      <line num="237" count="1" type="stmt"/>
+      <line num="252" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="253" count="0" type="stmt"/>
+      <line num="260" count="0" type="stmt"/>
+      <line num="268" count="0" type="cond" truecount="0" falsecount="2"/>
+    </file>
+  </project>
+</coverage>
