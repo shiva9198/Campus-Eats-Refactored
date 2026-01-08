@@ -1,19 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { apiClient, getUserFriendlyError } from '../api/client';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { AppHeader } from '../components/AppHeader';
 
-const POLL_INTERVAL = 15000; // 15 seconds
+const POLL_INTERVAL = 5000; // 5 seconds
 
 type OrderStatusScreenProps = {
     orderId: number;
     onHome: () => void;
 };
 
+// Define local interface for full order data including proof and OTP
+interface OrderDetails {
+    id: number;
+    status: string;
+    verification_proof?: string;
+    otp?: string;
+    total_amount: number;
+}
+
 const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
-    const [status, setStatus] = useState<string>('Pending');
+    const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null); // Day 10: Error state
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null); // Day 10: Last update timestamp
+    const [error, setError] = useState<string | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -22,23 +33,21 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
             try {
                 const response = await apiClient.get(`/orders/${orderId}`);
                 if (isMounted) {
-                    setStatus(response.data.status);
+                    setOrder(response.data);
                     setLastUpdated(new Date());
-                    setError(null); // Clear error on success
+                    setError(null);
                     setLoading(false);
                 }
             } catch (err) {
-                console.log("Polling error:", err);
+                console.log('Polling error:', err);
                 if (isMounted) {
-                    // Day 10: Show error but continue polling
                     setError(getUserFriendlyError(err));
                     setLoading(false);
-                    // Don't stop polling - network might recover
                 }
             }
         };
 
-        fetchStatus(); // Initial
+        fetchStatus();
         const interval = setInterval(fetchStatus, POLL_INTERVAL);
 
         return () => {
@@ -49,10 +58,9 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
 
     const manualRefresh = async () => {
         setLoading(true);
-        setError(null);
         try {
             const response = await apiClient.get(`/orders/${orderId}`);
-            setStatus(response.data.status);
+            setOrder(response.data);
             setLastUpdated(new Date());
             setError(null);
         } catch (err) {
@@ -62,130 +70,175 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
         }
     };
 
+    if (!order && loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#F97316" />
+                <Text style={styles.loadingText}>Fetching order stats...</Text>
+            </View>
+        );
+    }
+
+    if (!order) return null; // Should ideally show error state
+
+    // Status Visualization Logic
+    const steps = ['Pending', 'Preparing', 'Ready', 'Completed'];
+    const currentStepIndex = steps.indexOf(order.status) !== -1 ? steps.indexOf(order.status) : 0;
+
+    // Explicit mapping for "Pending Verification" and "Paid"
+    const getDisplayStatus = (status: string) => {
+        if (status === 'Pending_Verification') return 'Verifying Payment...';
+        if (status === 'Paid') return 'Payment Verified';
+        return status;
+    };
+
+    const isPaid = ['Paid', 'Preparing', 'Ready', 'Completed'].includes(order.status);
+    const showOtp = ['Paid', 'Preparing', 'Ready'].includes(order.status); // Hide when Completed
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Order #{orderId}</Text>
+            <AppHeader title={`Order #${orderId}`} showBack onBack={onHome} />
 
-            {/* Day 10: Error Banner */}
-            {error && !loading && (
-                <View style={styles.errorBanner}>
-                    <Text style={styles.errorBannerText}>⚠️ {error}</Text>
-                    <Text style={styles.errorSubtext}>Auto-retrying every 15s</Text>
-                </View>
-            )}
+            <ScrollView contentContainerStyle={styles.scrollContent}>
 
-            <View style={styles.statusContainer}>
-                <Text style={styles.statusLabel}>Current Status</Text>
-                <Text style={[styles.statusValue, status === 'Pending' ? styles.pending : styles.active]}>
-                    {status}
-                </Text>
-                {status === 'Pending' && (
-                    <Text style={styles.verificationText}>Waiting for Verification...</Text>
+                {/* 1. Network Error Banner */}
+                {error && (
+                    <View style={styles.errorBanner}>
+                        <Text style={styles.errorBannerText}>⚠️ {error}</Text>
+                        <Text style={styles.errorSubtext}>Auto-retrying...</Text>
+                    </View>
                 )}
 
-                {/* Day 10: Last Updated Timestamp */}
-                {lastUpdated && (
-                    <Text style={styles.lastUpdatedText}>
-                        Last updated: {lastUpdated.toLocaleTimeString()}
+                {/* 2. Main Status Card */}
+                <View style={styles.card}>
+                    <Text style={styles.statusLabel}>Current Status</Text>
+                    <Text style={[styles.statusValue, styles.activeStatus]}>
+                        {getDisplayStatus(order.status)}
                     </Text>
+                    {lastUpdated && (
+                        <Text style={styles.lastUpdatedText}>
+                            Updated: {lastUpdated.toLocaleTimeString()}
+                        </Text>
+                    )}
+                </View>
+
+                {/* 3. Payment Proof Section (Trust) */}
+                {order.verification_proof && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionTitle}>Payment Proof</Text>
+                        <Image
+                            source={{ uri: order.verification_proof }}
+                            style={styles.proofImage}
+                            resizeMode="cover"
+                        />
+                        <Text style={styles.proofLabel}>
+                            {isPaid ? "✅ Verified by Admin" : "⏳ Pending Verification"}
+                        </Text>
+                    </View>
                 )}
-            </View>
 
-            <View style={styles.timeline}>
-                {['Pending', 'Preparing', 'Ready'].map((s, i) => {
-                    const active = s === status || (status === 'Ready' && s !== 'Completed');
-                    // Simple logic for visual timeline
-                    return (
-                        <View key={s} style={styles.timelineItem}>
-                            <View style={[styles.dot, active ? styles.activeDot : null]} />
-                            <Text style={[styles.timelineText, active ? styles.activeText : null]}>{s}</Text>
-                        </View>
-                    )
-                })}
-            </View>
-
-            {/* Day 10: Manual Refresh Button */}
-            <TouchableOpacity
-                style={[styles.refreshButton, loading && styles.refreshButtonDisabled]}
-                onPress={manualRefresh}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#F97316" size="small" />
-                ) : (
-                    <Text style={styles.refreshButtonText}>🔄 Refresh Now</Text>
+                {/* 4. OTP Section (Security) */}
+                {/* Show OTP only if active and not completed */}
+                {showOtp && order.otp && (
+                    <View style={[styles.card, styles.otpCard]}>
+                        <Text style={styles.otpLabel}>Collection OTP</Text>
+                        <Text style={styles.otpValue}>{order.otp}</Text>
+                        <Text style={styles.otpHint}>Show this to the counter when Ready</Text>
+                    </View>
                 )}
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.homeButton} onPress={onHome}>
-                <Text style={styles.homeButtonText}>Back to Menu</Text>
-            </TouchableOpacity>
+                {/* 5. Visual Timeline */}
+                <View style={[styles.card, styles.timelineCard]}>
+                    {steps.map((step, index) => {
+                        const isActive = index <= currentStepIndex ||
+                            (step === 'Pending' && (order.status === 'Pending_Verification' || order.status === 'Paid'));
+
+                        return (
+                            <View key={step} style={styles.timelineItem}>
+                                <View style={[styles.dot, isActive && styles.activeDot]} />
+                                <Text style={[styles.timelineText, isActive && styles.activeTimelineText]}>
+                                    {step}
+                                </Text>
+                            </View>
+                        );
+                    })}
+                </View>
+
+                <PrimaryButton
+                    title={loading ? "Refreshing..." : "🔄 Refresh Status"}
+                    onPress={manualRefresh}
+                    loading={loading}
+                    style={{ marginTop: 20 }}
+                />
+
+            </ScrollView>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: 'white', padding: 24, alignItems: 'center', justifyContent: 'center' },
-    title: { fontSize: 22, fontWeight: 'bold', color: '#333', marginBottom: 20 },
-    errorBanner: {
-        backgroundColor: '#FEE2E2',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 20,
-        width: '100%',
+    container: { flex: 1, backgroundColor: '#f8f8f8' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    scrollContent: { padding: 16 },
+    loadingText: { marginTop: 12, color: '#888' },
+
+    // Cards
+    card: {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
         alignItems: 'center',
     },
-    errorBannerText: {
-        color: '#DC2626',
-        fontSize: 14,
-        textAlign: 'center',
-        marginBottom: 4,
+    otpCard: {
+        backgroundColor: '#ECFDF5',
+        borderColor: '#10B981',
+        borderWidth: 1,
     },
-    errorSubtext: {
-        color: '#EF4444',
-        fontSize: 12,
-        fontStyle: 'italic',
-    },
-    statusContainer: { alignItems: 'center', marginBottom: 40 },
-    statusLabel: { fontSize: 16, color: '#666', marginBottom: 8 },
-    statusValue: { fontSize: 32, fontWeight: 'bold' },
-    pending: { color: '#F97316' },
-    active: { color: 'green' },
-    verificationText: { marginTop: 8, fontStyle: 'italic', color: '#888' },
-    lastUpdatedText: {
-        marginTop: 8,
-        fontSize: 12,
-        color: '#999',
-        fontStyle: 'italic',
+    timelineCard: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
 
-    timeline: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 40 },
-    timelineItem: { alignItems: 'center' },
+    // Typography
+    statusLabel: { fontSize: 14, color: '#666', marginBottom: 4 },
+    statusValue: { fontSize: 24, fontWeight: 'bold', color: '#111', textAlign: 'center' },
+    activeStatus: { color: '#F97316' },
+    lastUpdatedText: { fontSize: 12, color: '#999', marginTop: 8 },
+    sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, width: '100%' },
+
+    // Proof
+    proofImage: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#eee' },
+    proofLabel: { marginTop: 8, fontWeight: '600', color: '#666' },
+
+    // OTP
+    otpLabel: { fontSize: 14, color: '#047857', fontWeight: 'bold', textTransform: 'uppercase' },
+    otpValue: { fontSize: 36, fontWeight: 'bold', color: '#047857', marginVertical: 4, letterSpacing: 4 },
+    otpHint: { fontSize: 12, color: '#047857' },
+
+    // Timeline
+    timelineItem: { alignItems: 'center', flex: 1 },
     dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#eee', marginBottom: 8 },
     activeDot: { backgroundColor: '#F97316' },
-    timelineText: { color: '#ccc' },
-    activeText: { color: '#333', fontWeight: 'bold' },
+    timelineText: { fontSize: 10, color: '#ccc' },
+    activeTimelineText: { color: '#333', fontWeight: 'bold' },
 
-    refreshButton: {
-        backgroundColor: '#FEF3C7',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
+    // Errors
+    errorBanner: {
+        backgroundColor: '#FEF2F2',
+        padding: 12,
         borderRadius: 8,
         marginBottom: 16,
-        minWidth: 160,
         alignItems: 'center',
     },
-    refreshButtonDisabled: {
-        opacity: 0.6,
-    },
-    refreshButtonText: {
-        color: '#F97316',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-
-    homeButton: { padding: 16 },
-    homeButtonText: { color: '#007AFF', fontSize: 16 }
+    errorBannerText: { color: '#EF4444', fontWeight: 'bold' },
+    errorSubtext: { color: '#EF4444', fontSize: 12 },
 });
 
 export default OrderStatusScreen;

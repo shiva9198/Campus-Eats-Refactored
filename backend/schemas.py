@@ -2,6 +2,22 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 
+# --- User Schemas ---
+
+class UserBase(BaseModel):
+    username: str
+    email: Optional[str] = None
+    role: str = "student"
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+    
+    class Config:
+        from_attributes = True
+
 # --- Menu Item Schemas ---
 class MenuItemBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -9,6 +25,7 @@ class MenuItemBase(BaseModel):
     price: int = Field(..., ge=1, le=1000, description="Price in INR (₹1 to ₹1,000)")
     category: str = Field(..., min_length=1, max_length=50)
     image_url: Optional[str] = Field(None, max_length=500)
+    is_vegetarian: bool = True
     is_available: bool = True
     
     @field_validator('image_url')
@@ -63,10 +80,63 @@ class OrderCreate(BaseModel):
 
 class Order(BaseModel):
     id: int
+    user_id: Optional[int] = None
     status: str
     total_amount: int
     created_at: datetime
     items: List[OrderItem]
+    
+    # Day 11 Fields
+    otp: Optional[str] = None
+    verification_proof: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    verified_by: Optional[str] = None
+
+    # Include User Details
+    user: Optional[UserBase] = None
 
     class Config:
         from_attributes = True
+
+class OrderAdminView(BaseModel):
+    """Admin view of order - HIDES OTP"""
+    id: int
+    user_id: Optional[int] = None
+    status: str
+    total_amount: int
+    created_at: datetime
+    items: List[OrderItem]
+    
+    # Exclude OTP? No, Admin needs to see it for manual verification if needed
+    otp: Optional[str] = None
+    verification_proof: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    verified_by: Optional[str] = None
+    
+    user: Optional[UserBase] = None
+
+    class Config:
+        from_attributes = True
+
+
+
+
+# --- Setting Schemas (Day 11) ---
+
+class SettingBase(BaseModel):
+    key: str
+    value: str
+    category: Optional[str] = "general"
+    description: Optional[str] = None
+
+class SettingCreate(SettingBase):
+    pass
+
+class Setting(SettingBase):
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+

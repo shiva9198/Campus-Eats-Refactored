@@ -13,18 +13,18 @@ const MenuItem = memo(({ item, onPress, isAdmin, onToggleStock }: Props) => {
     const isAvailable = item.is_available;
 
     const handleToggle = () => {
-        if (!onToggleStock) return;
+        if (!onToggleStock) {return;}
 
         Alert.alert(
-            "Confirm Stock Change",
-            `Mark ${item.name} as ${isAvailable ? "Out of Stock" : "Available"}?`,
+            'Confirm Stock Change',
+            `Mark ${item.name} as ${isAvailable ? 'Out of Stock' : 'Available'}?`,
             [
-                { text: "Cancel", style: "cancel" },
+                { text: 'Cancel', style: 'cancel' },
                 {
-                    text: "Confirm",
+                    text: 'Confirm',
                     onPress: () => onToggleStock(item),
-                    style: isAvailable ? "destructive" : "default"
-                }
+                    style: isAvailable ? 'destructive' : 'default',
+                },
             ]
         );
     };
@@ -44,11 +44,11 @@ const MenuItem = memo(({ item, onPress, isAdmin, onToggleStock }: Props) => {
 
                 {isAdmin ? (
                     <View style={styles.adminRow}>
-                        <Text style={styles.adminLabel}>{isAvailable ? "In Stock" : "Out of Stock"}</Text>
+                        <Text style={styles.adminLabel}>{isAvailable ? 'In Stock' : 'Out of Stock'}</Text>
                         <Switch
                             value={isAvailable}
                             onValueChange={handleToggle}
-                            trackColor={{ false: "#767577", true: "#F97316" }}
+                            trackColor={{ false: '#767577', true: '#F97316' }}
                         />
                     </View>
                 ) : (
@@ -58,7 +58,7 @@ const MenuItem = memo(({ item, onPress, isAdmin, onToggleStock }: Props) => {
                         disabled={!isAvailable}
                     >
                         <Text style={styles.addButtonText}>
-                            {isAvailable ? "Add +" : "Out of Stock"}
+                            {isAvailable ? 'Add +' : 'Out of Stock'}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginRight: 8,
         color: '#555',
-    }
+    },
 });
 
 export default MenuItem;

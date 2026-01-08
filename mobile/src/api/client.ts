@@ -68,9 +68,9 @@ apiClient.interceptors.response.use(
 // Day 10: Network Error Classification
 export const classifyNetworkError = (error: any): 'timeout' | 'offline' | 'server' | 'unknown' => {
   if (axios.isAxiosError(error)) {
-    if (error.code === 'ECONNABORTED') return 'timeout';
-    if (error.message === 'Network Error') return 'offline';
-    if (error.response && error.response.status >= 500) return 'server';
+    if (error.code === 'ECONNABORTED') {return 'timeout';}
+    if (error.message === 'Network Error') {return 'offline';}
+    if (error.response && error.response.status >= 500) {return 'server';}
   }
   return 'unknown';
 };
@@ -94,7 +94,7 @@ const retryRequest = async (fn: () => Promise<any>, retries = 2): Promise<any> =
   try {
     return await fn();
   } catch (error) {
-    if (retries === 0) throw error;
+    if (retries === 0) {throw error;}
 
     const errorType = classifyNetworkError(error);
     // Don't retry on client errors (400-499 except timeout)
@@ -130,13 +130,23 @@ export const login = async (username: string, password: string) => {
   formData.append('password', password);
 
   const response = await apiClient.post('/token', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data; // { access_token, token_type }
+};
+
+export const register = async (userData: any) => {
+  const response = await apiClient.post('/register', userData);
+  return response.data; // Returns User object
 };
 
 // Day 3/14: Create Order (Authenticated)
 export const createOrder = async (orderData: any) => {
   const response = await apiClient.post('/orders/', orderData);
+  return response.data;
+};
+
+export const getMyOrders = async () => {
+  const response = await apiClient.get('/orders/');
   return response.data;
 };

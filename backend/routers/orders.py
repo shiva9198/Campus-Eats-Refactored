@@ -57,7 +57,7 @@ def create_order(
         db_order = models.Order(
             total_amount=total_amount,
             status="Pending",
-            # user_id linkage to be added later
+            user_id=current_user["id"]
         )
         db.add(db_order)
         db.commit()
@@ -88,6 +88,22 @@ def create_order(
             status_code=500,
             detail=f"Failed to create order: {str(e)}"
         )
+
+@router.get("/", response_model=List[schemas.Order])
+def get_my_orders(
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_active_user)
+):
+    """Get current user's order history"""
+    # If admin, redirected to admin router usually, but if utilizing this endpoint:
+    if current_user["role"] == "admin":
+        return db.query(models.Order).order_by(models.Order.created_at.desc()).all()
+    
+    # Filter by user_id
+    # Note: Phase 1/2 verify scripts didn't link user_id to order strictly (nullable=True), 
+    # but new auth puts user info in context.
+    # We should ensure create_order links the user.
+    return db.query(models.Order).filter(models.Order.user_id == current_user["id"]).order_by(models.Order.created_at.desc()).all()
 
 
 @router.get("/{order_id}", response_model=schemas.Order)

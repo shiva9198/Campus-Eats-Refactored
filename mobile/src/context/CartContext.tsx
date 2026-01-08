@@ -43,7 +43,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         }
         case 'REMOVE_ITEM': {
             const itemToRemove = state.items.find(i => i.id === action.payload);
-            if (!itemToRemove) return state;
+            if (!itemToRemove) {return state;}
 
             // Remove entire item regardless of quantity (simple rule for now, or decrement?)
             // Let's implement DECREMENT 1 logic for better UX, or simple REMOVE?
@@ -65,8 +65,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             return {
                 ...state,
                 items: newItems,
-                total: state.total - priceToDeduct
-            }
+                total: state.total - priceToDeduct,
+            };
         }
         case 'CLEAR_CART':
             return { items: [], total: 0 };
@@ -91,6 +91,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
 export const useCart = () => {
     const context = useContext(CartContext);
-    if (!context) throw new Error('useCart must be used within a CartProvider');
+    if (!context) {throw new Error('useCart must be used within a CartProvider');}
     return context;
 };

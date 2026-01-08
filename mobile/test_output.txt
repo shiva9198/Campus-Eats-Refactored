@@ -1,0 +1,43 @@
+
+> CampusEats@0.0.1 test
+> jest
+
+  console.error
+    Warning: An update to AuthProvider inside a test was not wrapped in act(...).
+    
+    When testing, code that causes React state updates should be wrapped into act(...):
+    
+    act(() => {
+      /* fire events that update state */
+    });
+    /* assert on the output */
+    
+    This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+        at AuthProvider (/Users/shiva/Documents/github_projects/Campus-Eats-Clone/mobile/src/context/AuthContext.tsx:15:23)
+        at App
+
+      41 |         };
+      42 |         restoreToken();
+    > 43 |     }, []);
+         |           ^
+      44 |
+      45 |     const signIn = async (newToken: string) => {
+      46 |         try {
+
+      at printWarning (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:72:30)
+      at error (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:46:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:16716:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14916:5)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6767:7)
+      at src/context/AuthContext.tsx:43:11
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS __tests__/App.test.tsx
+  ✓ renders correctly (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        0.52 s
+Ran all test suites.

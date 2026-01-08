@@ -6,4 +6,5 @@ export interface MenuItem {
     category: string;
     image_url?: string;
     is_available: boolean;
+    is_vegetarian: boolean;
 }

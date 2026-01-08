@@ -35,8 +35,8 @@ const CartScreen = ({ onBack, onOrderPlaced }: CartScreenProps) => {
                             const orderPayload = {
                                 items: state.items.map(item => ({
                                     menu_item_id: item.id,
-                                    quantity: item.quantity
-                                }))
+                                    quantity: item.quantity,
+                                })),
                             };
 
                             const response = await apiClient.post('/orders', orderPayload);
@@ -52,8 +52,8 @@ const CartScreen = ({ onBack, onOrderPlaced }: CartScreenProps) => {
                         } finally {
                             setOrdering(false);
                         }
-                    }
-                }
+                    },
+                },
             ]
         );
     };
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     button: { padding: 12, backgroundColor: '#F97316', borderRadius: 8 },
     buttonText: { color: 'white', fontSize: 16 },
     successText: { fontSize: 24, fontWeight: 'bold', color: 'green', marginBottom: 10 },
-    subText: { fontSize: 16, color: '#666', marginBottom: 20 }
+    subText: { fontSize: 16, color: '#666', marginBottom: 20 },
 });
 
 export default CartScreen;

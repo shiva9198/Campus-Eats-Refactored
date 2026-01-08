@@ -9,7 +9,10 @@ import logging
 import database
 import models
 import auth
-from routers import menu, orders, admin, health, payments, auth
+from routers import menu, orders, admin, health, payments, auth, upload, events
+from fastapi.staticfiles import StaticFiles
+from middleware.rate_limit import RateLimitMiddleware
+
 
 # Day 11: Configure Logging (Safe & Minimal)
 logging.basicConfig(
@@ -23,50 +26,21 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(
     title="Campus Eats Backend",
-    version="2.0.0-batch2",
-    description="Backend for Campus Eats (Day 11: Production Hardening)"
+    version="2.0.0-redis",
+    description="Backend for Campus Eats (Redis Integration: Per-User Rate Limiting + Pub/Sub)"
 )
 
-# Day 11: In-Memory Rate Limiting (Zero Dependency)
-# Scope: Write operations (POST, PUT, PATCH, DELETE)
-# Limit: 20 requests per minute per IP
-# Storage: Dict[client_ip, deque[timestamps]]
-RATE_LIMIT_window = 60 # seconds
-RATE_LIMIT_max_requests = 20
-rate_limit_store = defaultdict(deque)
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    # Skip for read-only ops (GET, OPTIONS, HEAD) and excluded paths
-    if request.method in ["GET", "OPTIONS", "HEAD"] or request.url.path == "/health/":
-        return await call_next(request)
-
-    client_ip = request.client.host
-    now = time.time()
-
-    # Get user's request history
-    history = rate_limit_store[client_ip]
-
-    # Remove timestamps older than window
-    while history and history[0] < now - RATE_LIMIT_window:
-        history.popleft()
-
-    # Debug Limit
-    # logger.info(f"Rate Limit Check: {client_ip} {request.method} - History: {len(history)}/{RATE_LIMIT_max_requests}")
-
-    # Check limit
-    if len(history) >= RATE_LIMIT_max_requests:
-        logger.warning(f"Rate Limit Exceeded: {client_ip} tried {request.method} {request.url.path} (History: {len(history)})")
-        return JSONResponse(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={"detail": "Too many requests. Please try again later."}
-        )
-
-    # Add current timestamp
-    history.append(now)
-
-    response = await call_next(request)
-    return response
+# Redis-based Rate Limiting Middleware
+app.add_middleware(RateLimitMiddleware)
 
 # Day 11: Request Logging Middleware (Safe)
 @app.middleware("http")
@@ -93,15 +67,6 @@ async def log_requests(request: Request, call_next):
         pass # Logging should never break request flow
 
     return response
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Global Exception Handlers (Day 8 - Production Hardening)
 
@@ -139,11 +104,20 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.on_event("startup")
 async def startup_event():
     logger.info("=" * 60)
-    logger.info("Campus Eats Backend Starting (Batch-2)")
+    logger.info("Campus Eats Backend Starting (Redis Integration)")
     logger.info(f"Startup Time: {datetime.now().isoformat()}")
     logger.info(f"Database: PostgreSQL (via pg8000)")
-    logger.info(f"Version: 2.0.0-batch2")
+    logger.info(f"Version: 2.0.0-redis")
+    
+    # Check Redis connection
+    from redis_client import redis_client
+    if redis_client.is_available():
+        logger.info("✅ Redis: Connected (Rate limiting + Caching + Pub/Sub enabled)")
+    else:
+        logger.warning("⚠️ Redis: Unavailable (Graceful degradation active)")
+    
     logger.info("=" * 60)
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -155,12 +129,20 @@ app.include_router(orders.router)
 app.include_router(payments.router)
 app.include_router(admin.router)
 app.include_router(health.router)
+app.include_router(upload.router) # Day 11: Image Uploads
 app.include_router(auth.router) # Day 12: JWT Auth
+app.include_router(events.router) # Redis: SSE Real-time Events
+
+# Day 11: Mount Static Files (Safe Local Storage)
+import os
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/")
 def read_root():
     return {
         "message": "Campus Eats Production Backend Running 🚀",
-        "version": "2.0.0-batch2",
-        "batch": "Batch-2: Production Hardening"
+        "version": "2.0.0-redis",
+        "features": "Redis Integration: Per-User Rate Limiting + Pub/Sub + Caching"
     }

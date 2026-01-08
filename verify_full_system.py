@@ -149,6 +149,75 @@ def test_backend_health():
         print(f"  ❌ Backend unreachable: {e}")
         return False
 
+def test_payment_verification_flow():
+    """Phase 4: Payment Verification & OTP Generation"""
+    print("\n[Testing] Payment Verification Flow...")
+    
+    # 1. Create a fresh order as Student
+    r = requests.get(f"{BASE_URL}/menu")
+    items = r.json()
+    available = [i for i in items if i.get('is_available', True)]
+    
+    if not available:
+        print("  ⚠️  Skipping: No items available")
+        return True
+
+    order_payload = {
+        "items": [{"menu_item_id": available[0]['id'], "quantity": 1}]
+    }
+    r = requests.post(f"{BASE_URL}/orders/", json=order_payload, headers=get_headers("student"))
+    if r.status_code != 200:
+        print("  ❌ Failed to create setup order")
+        return False
+    
+    order_id = r.json()['id']
+    print(f"  ✅ Setup: Order #{order_id} created")
+
+    # 2. Student Submits Payment Proof
+    submit_payload = {
+        "order_id": order_id,
+        "reference": "TEST_REF_123",
+        "screenshot_url": "http://test.com/proof.jpg"
+    }
+    r = requests.post(f"{BASE_URL}/payments/submit", json=submit_payload, headers=get_headers("student"))
+    
+    if r.status_code != 200:
+        print(f"  ❌ Payment submission failed: {r.status_code} - {r.text}")
+        return False
+        
+    print(f"  ✅ Student submitted payment proof (Status: {r.json()['status']})")
+
+    # 3. Admin Verifies Payment
+    # Assuming endpoint is /payments/verify based on adminService.ts
+    verify_payload = {
+        "order_id": order_id,
+        "verified_by": "admin_test_bot"
+    }
+    r = requests.post(f"{BASE_URL}/payments/verify", json=verify_payload, headers=get_headers("admin"))
+    
+    if r.status_code != 200:
+        print(f"  ❌ Verification failed: {r.status_code} - {r.text}")
+        return False
+    
+    data = r.json()
+    if not data.get('otp'):
+        print("  ❌ OTP not generated in response")
+        return False
+        
+    print(f"  ✅ Payment Verified. OTP Generated: {data['otp']}")
+    
+    # 3. Verify Order Status became 'Paid' or 'Preparing' (depending on logic)
+    r = requests.get(f"{BASE_URL}/orders/{order_id}", headers=get_headers("student"))
+    status = r.json()['status']
+    if status in ['Paid', 'Preparing']: # Admin verify might auto-move to Paid
+        print(f"  ✅ Order Status updated to: {status}")
+        return True
+    else:
+        print(f"  ❌ Order Status incorrect: {status}")
+        return False
+
+    return True
+
 def main():
     print("=" * 50)
     print("Campus Eats - Full System Verification (Day 15 JWT)")
@@ -170,6 +239,7 @@ def main():
         test_backend_health,
         test_menu_api,
         test_order_flow,
+        test_payment_verification_flow,
         test_inventory_management,
         test_admin_auth,
     ]
