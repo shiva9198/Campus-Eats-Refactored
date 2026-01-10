@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { AdminOrder, adminService } from '../../services/adminService';
+import { AppHeader } from '../../components/AppHeader';
 
 const AdminOrderDetailScreen = ({ order, onBack, onVerifyPayment }: any) => {
-    console.log("Rendering AdminOrderDetailScreen", order?.id);
+    console.log('Rendering AdminOrderDetailScreen', order?.id);
     const [orderData, setOrderData] = useState<AdminOrder>(order);
     const [currentStatus, setCurrentStatus] = useState(order.status);
     const [updating, setUpdating] = useState(false);
 
     // Refresh order data (especially for OTP after verification)
-    const refreshOrder = async () => {
+    // Wrapped in useCallback to satisfy linter
+    const refreshOrder = React.useCallback(async () => {
         try {
             // Since we don't have a direct getOrder(id) in adminService yet that returns AdminOrder with OTP clearly defined for this screen,
             // we will rely on the list or add a helper.
-            // Actually, let's just use the adminService.getOrders() and filter. 
+            // Actually, let's just use the adminService.getOrders() and filter.
             // Or better, assume onVerifyPayment returns the updated order or we re-fetch.
 
             // Temporary: We will assume we can fetch via ID if we added it, but let's stick to existing patterns.
@@ -25,13 +27,13 @@ const AdminOrderDetailScreen = ({ order, onBack, onVerifyPayment }: any) => {
                 setCurrentStatus(fresh.status);
             }
         } catch (e) {
-            console.error("Failed to refresh order", e);
+            console.error('Failed to refresh order', e);
         }
-    };
+    }, [order.id]);
 
     // Propagate onVerifyPayment to handle refresh
     const handleVerify = () => {
-        // We pass a callback to the parent/navigation for verify screen, 
+        // We pass a callback to the parent/navigation for verify screen,
         // but when we come BACK, we need to refresh.
         // If onVerifyPayment invokes navigation, we need to refresh on focus or via callback.
         onVerifyPayment(async () => {
@@ -42,7 +44,7 @@ const AdminOrderDetailScreen = ({ order, onBack, onVerifyPayment }: any) => {
 
     useEffect(() => {
         refreshOrder();
-    }, []);
+    }, [refreshOrder]);
 
     const updateStatus = async (newStatus: string) => {
         setUpdating(true);
@@ -71,13 +73,11 @@ const AdminOrderDetailScreen = ({ order, onBack, onVerifyPayment }: any) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={onBack}>
-                    <Text style={styles.backText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Order #{order.id}</Text>
-                <View style={{ width: 50 }} />
-            </View>
+            <AppHeader
+                title={`Order #${order.id}`}
+                showBack
+                onBack={onBack}
+            />
 
             <ScrollView style={styles.content}>
                 <View style={styles.statusBox}>

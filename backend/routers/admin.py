@@ -108,6 +108,13 @@ def save_setting(
     
     db.commit()
     db.refresh(db_setting)
+
+    # Publish shop status update if changed
+    if setting.key == "shop_status":
+        from pubsub import publish_shop_status
+        is_open = (setting.value != "closed")
+        publish_shop_status(is_open)
+        
     return db_setting
 
 # --- Day 11: Stats API ---

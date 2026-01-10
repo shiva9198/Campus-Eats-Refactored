@@ -1,28 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { adminService } from '../../services/adminService';
-import { apiClient } from '../../api/client';
+import { AppHeader } from '../../components/AppHeader';
 
 const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
     const [reason, setReason] = useState('');
     const [loading, setLoading] = useState(false);
     const [action, setAction] = useState<'none' | 'rejecting'>('none');
 
-    // Construct Image URL
-    // If backend returns relative path /static/..., prepend base URL
-    // apiClient.defaults.baseURL contains the base.
-    const getImageUrl = (path: string | null | undefined) => {
-        if (!path) { return undefined; }
-        if (path.startsWith('http')) { return path; }
-        return `${apiClient.defaults.baseURL}${path}`;
+    const handleVerify = async () => {
+        // ADMIN SAFEGUARD: Confirmation Dialog
+        Alert.alert(
+            'Confirm Verification',
+            `Have you checked UTR: ${order.verification_proof} in your BANK APP?`,
+            [
+                { text: 'No, Cancel', style: 'cancel' },
+                {
+                    text: 'Yes, I Validated It',
+                    onPress: async () => {
+                        performVerification();
+                    }
+                }
+            ]
+        );
     };
 
-
-    const handleVerify = async () => {
+    const performVerification = async () => {
         setLoading(true);
         try {
             const result = await adminService.verifyPayment(order.id, 'admin'); // Hardcoded admin for now
-            Alert.alert('Success', `Payment Verified!\n\nOTP: ${result.otp}`, [
+            Alert.alert('Success', `Payment Verified!\n\nOTP Generated: ${result.otp}`, [
                 { text: 'OK', onPress: () => onVerified() },
             ]);
         } catch (error) {
@@ -52,33 +59,32 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={onBack}>
-                    <Text style={styles.backText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Verify Payment</Text>
-                <View style={{ width: 50 }} />
-            </View>
+            <AppHeader
+                title="Verify Payment"
+                showBack
+                onBack={onBack}
+            />
 
             <View style={styles.content}>
-                <Text style={styles.sectionTitle}>Proof of Payment</Text>
+                <Text style={styles.sectionTitle}>Verification Details</Text>
 
-                {order.verification_proof ? (
-                    <Image
-                        source={{ uri: getImageUrl(order.verification_proof) }}
-                        style={styles.proofImage}
-                        resizeMode="contain"
-                    />
-                ) : (
-                    <View style={styles.noImage}>
-                        <Text style={styles.noImageText}>No Image Uploaded</Text>
-                    </View>
-                )}
+                <View style={styles.utrBox}>
+                    <Text style={styles.utrLabel}>UTR / REFERENCE NO</Text>
+                    <Text style={styles.utrValue}>{order.verification_proof || 'MISSING'}</Text>
+                </View>
 
                 <View style={styles.details}>
                     <Text style={styles.detailText}>Order ID: #{order.id}</Text>
-                    <Text style={styles.detailText}>User: {order.user?.username || 'Unknown Student'}</Text>
-                    <Text style={styles.detailText}>Amount: ₹{order.total_amount}</Text>
+                    <Text style={styles.detailText}>Student: {order.user?.username || 'Unknown'}</Text>
+                    <Text style={styles.amountText}>Amount: ₹{order.total_amount}</Text>
+                </View>
+
+                <View style={styles.instructionBox}>
+                    <Text style={styles.instructionText}>
+                        1. Open your Bank App.{'\n'}
+                        2. Search for UTR above.{'\n'}
+                        3. Confirm amount ₹{order.total_amount}.
+                    </Text>
                 </View>
 
                 {action === 'rejecting' ? (
@@ -86,9 +92,10 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
                         <Text style={styles.label}>Reason for Rejection:</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. Invalid Screenshot, Amount Mismatch"
+                            placeholder="e.g. Duplicate UTR, Amount Mismatch"
                             value={reason}
                             onChangeText={setReason}
+                            autoCapitalize="sentences"
                         />
                         <View style={styles.row}>
                             <TouchableOpacity style={styles.cancelBtn} onPress={() => setAction('none')}>
@@ -102,11 +109,11 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
                 ) : (
                     <View style={styles.actions}>
                         <TouchableOpacity style={styles.verifyBtn} onPress={handleVerify} disabled={loading}>
-                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>✅ Approve Payment</Text>}
+                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>✅ Verify in Bank App</Text>}
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.rejectBtn} onPress={() => setAction('rejecting')} disabled={loading}>
-                            <Text style={styles.btnText}>❌ Reject Payment</Text>
+                            <Text style={styles.btnText}>❌ Reject (Invalid UTR)</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -117,27 +124,27 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
-    backText: { fontSize: 16, color: '#007AFF' },
-    title: { fontSize: 18, fontWeight: 'bold' },
-    content: { padding: 20 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-    proofImage: { width: '100%', height: 400, backgroundColor: '#f0f0f0', marginBottom: 20, borderRadius: 8 },
-    noImage: { width: '100%', height: 200, backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-    noImageText: { color: '#888' },
-    details: { marginBottom: 30, padding: 15, backgroundColor: '#f9f9f9', borderRadius: 8 },
-    detailText: { fontSize: 16, marginBottom: 5 },
-    actions: { gap: 10 },
-    verifyBtn: { backgroundColor: '#4CAF50', padding: 15, borderRadius: 8, alignItems: 'center' },
-    rejectBtn: { backgroundColor: '#F44336', padding: 15, borderRadius: 8, alignItems: 'center' },
+    content: { padding: 24 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+    utrBox: { backgroundColor: '#E3F2FD', padding: 20, borderRadius: 12, marginBottom: 20, alignItems: 'center', borderColor: '#2196F3', borderWidth: 1 },
+    utrLabel: { color: '#1976D2', fontSize: 12, fontWeight: 'bold', marginBottom: 5, letterSpacing: 1 },
+    utrValue: { fontSize: 28, fontWeight: 'bold', color: '#0D47A1' },
+    details: { marginBottom: 20, padding: 15, backgroundColor: '#f9f9f9', borderRadius: 8 },
+    detailText: { fontSize: 16, marginBottom: 8, color: '#555' },
+    amountText: { fontSize: 20, fontWeight: 'bold', color: '#2E7D32', marginTop: 5 },
+    instructionBox: { marginBottom: 30, padding: 15, backgroundColor: '#FFF3E0', borderRadius: 8, borderColor: '#FFB74D', borderWidth: 1 },
+    instructionText: { color: '#E65100', lineHeight: 22, fontWeight: '500' },
+    actions: { gap: 15 },
+    verifyBtn: { backgroundColor: '#2E7D32', padding: 18, borderRadius: 12, alignItems: 'center', elevation: 3 },
+    rejectBtn: { backgroundColor: '#D32F2F', padding: 18, borderRadius: 12, alignItems: 'center', elevation: 1 },
     btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
     rejectBox: { padding: 15, backgroundColor: '#FFEBEE', borderRadius: 8 },
     label: { marginBottom: 5, fontWeight: 'bold' },
-    input: { backgroundColor: '#fff', padding: 10, borderRadius: 5, borderWidth: 1, borderColor: '#ffcdd2', marginBottom: 10 },
-    row: { flexDirection: 'row', justifyContent: 'space-between' },
+    input: { backgroundColor: '#fff', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ffcdd2', marginBottom: 15, fontSize: 16 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cancelBtn: { padding: 10 },
-    cancelText: { color: '#666' },
-    confirmRejectBtn: { backgroundColor: '#D32F2F', padding: 10, borderRadius: 5 },
+    cancelText: { color: '#666', fontWeight: 'bold' },
+    confirmRejectBtn: { backgroundColor: '#C62828', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8 },
     disabled: { opacity: 0.7 },
 });
 

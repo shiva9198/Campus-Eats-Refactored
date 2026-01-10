@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { BrandingLogo } from './BrandingLogo';
 
 interface AppHeaderProps {
     title: string;
@@ -17,11 +18,7 @@ export const AppHeader = ({ title, showBack, onBack, rightAction }: AppHeaderPro
                         <Text style={styles.backText}>←</Text>
                     </TouchableOpacity>
                 )}
-                <Image
-                    source={require('../assets/logo_in_app.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
+                <BrandingLogo style={styles.logo} />
                 <Text style={[styles.title, showBack && styles.titleWithBack]}>{title}</Text>
             </View>
             {rightAction && <View style={styles.rightContainer}>{rightAction}</View>}

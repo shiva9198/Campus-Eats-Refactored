@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import { register, login, getUserFriendlyError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { AuthInput } from '../components/AuthInput';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { BrandingLogo } from '../components/BrandingLogo';
 
 interface RegisterScreenProps {
     onSwitchToLogin: () => void;
@@ -43,11 +44,7 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.logoContainer}>
-                    <Image
-                        source={require('../assets/logo_in_app.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
+                    <BrandingLogo style={styles.logo} />
                     <Text style={styles.brandTitle}>Campus Eats</Text>
                     <Text style={styles.brandSubtitle}>Your Campus Food Delivery</Text>
                 </View>

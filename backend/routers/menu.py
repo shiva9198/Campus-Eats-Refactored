@@ -16,9 +16,21 @@ def get_menu(db: Session = Depends(database.get_db)):
     def fetch_menu():
         # Return ALL items (Day 5 requirement: Show Out of Stock items)
         items = db.query(models.MenuItem).all()
-        return [schemas.MenuItem.model_validate(item) for item in items]
+        return [schemas.MenuItem.model_validate(item).model_dump() for item in items]
     
     return get_cached("cache:menu:all", 60, fetch_menu)
+
+@router.get("/status")
+def get_shop_status(db: Session = Depends(database.get_db)):
+    """Public endpoint to check if shop is open"""
+    shop_setting = db.query(models.Setting).filter(models.Setting.key == "shop_status").first()
+    # Default to open if not set
+    is_open = True
+    if shop_setting and shop_setting.value == "closed":
+        is_open = False
+    
+    return {"status": "open" if is_open else "closed", "is_open": is_open}
+
 
 @router.post("/", response_model=schemas.MenuItem)
 def create_menu_item(

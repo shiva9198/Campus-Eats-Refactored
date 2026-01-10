@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Switch, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { adminService } from '../../services/adminService';
+import { AppHeader } from '../../components/AppHeader';
 
 const AdminEditMenuScreen = ({ item, onBack, onSave }: any) => {
     const isEditing = !!item;
@@ -49,15 +50,16 @@ const AdminEditMenuScreen = ({ item, onBack, onSave }: any) => {
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={onBack}>
-                    <Text style={styles.backText}>← Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>{isEditing ? 'Edit Item' : 'Add New Item'}</Text>
-                <TouchableOpacity onPress={handleSave} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#007AFF" /> : <Text style={styles.saveText}>Save</Text>}
-                </TouchableOpacity>
-            </View>
+            <AppHeader
+                title={isEditing ? 'Edit Item' : 'Add New Item'}
+                showBack
+                onBack={onBack}
+                rightAction={
+                    <TouchableOpacity onPress={handleSave} disabled={loading}>
+                        {loading ? <ActivityIndicator color="#007AFF" /> : <Text style={styles.saveText}>Save</Text>}
+                    </TouchableOpacity>
+                }
+            />
 
             <View style={styles.form}>
                 <Text style={styles.label}>Name *</Text>

@@ -16,6 +16,14 @@ def create_order(
 ):
     """Create a new order with server-side validation and total calculation"""
     try:
+        # 0. Check Shop Status (Global Lock)
+        shop_setting = db.query(models.Setting).filter(models.Setting.key == "shop_status").first()
+        if shop_setting and shop_setting.value == "closed":
+             raise HTTPException(
+                status_code=400,
+                detail="Sorry, the shop is currently closed. We are not accepting new orders."
+            )
+
         # 1. Calculate Total Amount securely on server side
         total_amount = 0
         valid_items = []

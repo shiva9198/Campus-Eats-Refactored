@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useCart } from '../context/CartContext';
 import { apiClient, getUserFriendlyError } from '../api/client';
+import { AppHeader } from '../components/AppHeader';
 
 type CartScreenProps = {
     onBack: () => void;
@@ -71,12 +72,11 @@ const CartScreen = ({ onBack, onOrderPlaced }: CartScreenProps) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Text style={styles.backText}>← Menu</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Your Cart</Text>
-            </View>
+            <AppHeader
+                title="Your Cart"
+                showBack
+                onBack={onBack}
+            />
 
             <FlatList
                 data={state.items}

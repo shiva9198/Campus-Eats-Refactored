@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { jwtDecode } from 'jwt-decode'; // Wait, we use a utility
 import { parseJwt } from '../utils/jwt';
+import { AppHeader } from '../components/AppHeader';
 
 interface ProfileScreenProps {
     onBack: () => void;
@@ -33,13 +33,11 @@ const ProfileScreen = ({ onBack }: ProfileScreenProps) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={onBack}>
-                    <Text style={styles.backText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>Profile</Text>
-                <View style={{ width: 50 }} />
-            </View>
+            <AppHeader
+                title="Profile"
+                showBack
+                onBack={onBack}
+            />
 
             <View style={styles.content}>
                 <View style={styles.card}>

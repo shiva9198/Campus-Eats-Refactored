@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert, Activ
 import { getMenu, updateMenuItemAvailability } from '../../api/client'; // Shared client methods
 import { adminService } from '../../services/adminService';
 import { apiClient } from '../../api/client';
+import { AppHeader } from '../../components/AppHeader';
 
 const AdminMenuListScreen = ({ onEditItem, onAddItem }: any) => {
     const [items, setItems] = useState<any[]>([]);
@@ -62,8 +63,8 @@ const AdminMenuListScreen = ({ onEditItem, onAddItem }: any) => {
     };
 
     const getImageUrl = (path: string | null) => {
-        if (!path) {return undefined;}
-        if (path.startsWith('http')) {return path;}
+        if (!path) { return undefined; }
+        if (path.startsWith('http')) { return path; }
         return `${apiClient.defaults.baseURL}${path}`;
     };
 
@@ -103,12 +104,14 @@ const AdminMenuListScreen = ({ onEditItem, onAddItem }: any) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Menu Management</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={onAddItem}>
-                    <Text style={styles.addBtnText}>+ Add Item</Text>
-                </TouchableOpacity>
-            </View>
+            <AppHeader
+                title="Menu Management"
+                rightAction={
+                    <TouchableOpacity style={styles.addBtn} onPress={onAddItem}>
+                        <Text style={styles.addBtnText}>+ Add Item</Text>
+                    </TouchableOpacity>
+                }
+            />
 
             {loading ? (
                 <View style={styles.center}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, ScrollView, Image } from 'react-native';
 import { apiClient, getUserFriendlyError } from '../api/client';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { AppHeader } from '../components/AppHeader';
@@ -79,7 +79,7 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
         );
     }
 
-    if (!order) return null; // Should ideally show error state
+    if (!order) { return null; } // Should ideally show error state
 
     // Status Visualization Logic
     const steps = ['Pending', 'Preparing', 'Ready', 'Completed'];
@@ -87,8 +87,8 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
 
     // Explicit mapping for "Pending Verification" and "Paid"
     const getDisplayStatus = (status: string) => {
-        if (status === 'Pending_Verification') return 'Verifying Payment...';
-        if (status === 'Paid') return 'Payment Verified';
+        if (status === 'Pending_Verification') { return 'Verifying Payment...'; }
+        if (status === 'Paid') { return 'Payment Verified'; }
         return status;
     };
 
@@ -132,7 +132,7 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
                             resizeMode="cover"
                         />
                         <Text style={styles.proofLabel}>
-                            {isPaid ? "✅ Verified by Admin" : "⏳ Pending Verification"}
+                            {isPaid ? '✅ Verified by Admin' : '⏳ Pending Verification'}
                         </Text>
                     </View>
                 )}
@@ -165,7 +165,7 @@ const OrderStatusScreen = ({ orderId, onHome }: OrderStatusScreenProps) => {
                 </View>
 
                 <PrimaryButton
-                    title={loading ? "Refreshing..." : "🔄 Refresh Status"}
+                    title={loading ? 'Refreshing...' : '🔄 Refresh Status'}
                     onPress={manualRefresh}
                     loading={loading}
                     style={{ marginTop: 20 }}

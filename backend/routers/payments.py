@@ -8,10 +8,12 @@ router = APIRouter(
     tags=["payments"],
 )
 
+from pydantic import BaseModel, Field
+
 class PaymentSubmit(BaseModel):
     order_id: int
-    reference: str = "Manual Proof"
-    screenshot_url: str = None # Day 11: Added for proof linkage
+    utr: str = Field(..., min_length=4, max_length=50, description="Unique Transaction Reference (UTR)")
+    # STRICT: No screenshot_url allowed
 
 class PaymentVerify(BaseModel):
     order_id: int
@@ -24,7 +26,7 @@ class PaymentReject(BaseModel):
 
 @router.post("/submit")
 def submit_payment(payment: PaymentSubmit, db: Session = Depends(database.get_db)):
-    """Student submits payment proof (Manual)"""
+    """Student submits payment proof (Manual UTR Only)"""
     order = db.query(models.Order).filter(models.Order.id == payment.order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -34,10 +36,19 @@ def submit_payment(payment: PaymentSubmit, db: Session = Depends(database.get_db
     if current_status not in ["Pending", "Payment_Rejected"]:
         raise HTTPException(status_code=400, detail=f"Cannot submit payment for order in '{current_status}' state.")
 
+    # FRAUD PREVENTION: Check for duplicate UTR
+    # repurposing 'verification_proof' column for UTR to avoid migration
+    duplicate_utr = db.query(models.Order).filter(
+        models.Order.verification_proof == payment.utr,
+        models.Order.id != order.id # Ignore self
+    ).first()
+    
+    if duplicate_utr:
+        raise HTTPException(status_code=400, detail="This UTR has already been used. Please check your transaction details.")
+
     order.payment_submitted = True
     order.status = "Pending_Verification"
-    if payment.screenshot_url:
-        order.verification_proof = payment.screenshot_url
+    order.verification_proof = payment.utr # Store UTR in proof column
     
     db.commit()
     return {"message": "Payment submitted for verification", "status": order.status}

@@ -44,3 +44,13 @@
 - **APK Size**: Must be ≤ 20 MB. No bundled assets, no heavy libs.
 - **Do NOT use Expo libraries** (e.g. `expo-font`) unless using Unimodules in Bare workflow is allowed. Prefer `react-native-*` CLI native libraries.
 - **Strict Status Control**: Student NEVER changes status. Admin ONLY.
+
+## E. Execution Log (Strict Hardening)
+| Date | Item | Decision / Change | Reason |
+|------|------|-------------------|--------|
+| Day 12 | `mobile_legacy` | **MOVED to Archive** (Not Deleted) | Preserve Engineering Memory per Lead Engineer. |
+| Day 12 | Payment Flow | **Enforced UTR Only** | Images/Screenshots create operational chaos. |
+| Day 12 | Payment UI | **Added Token # Display** | Immediate reassurance for student. |
+| Day 12 | Payment Backend | **Added Duplicate UTR Check** | Prevent fraud/double-spending. |
+| Day 12 | Mobile Config | **Verified Hermes/ProGuard** | Ensure APK size ≤ 20 MB. |
+| Day 12 | Gateway | **Deferred** | Settings placeholder only. No implementation. |

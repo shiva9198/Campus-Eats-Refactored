@@ -81,3 +81,60 @@ async def stream_menu_updates():
         event_generator(),
         media_type="text/event-stream"
     )
+
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
+import json
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    if not redis_client.is_available():
+        await websocket.close(code=1011, reason="Redis unavailable")
+        return
+
+    pubsub = redis_client.client.pubsub()
+    try:
+        # Subscribe to relevant global channels
+        pubsub.subscribe("shop_status", "menu_updates")
+        logger.info("WebSocket connected and subscribed to global updates")
+        
+        while True:
+            # Non-blocking check for messages
+            message = pubsub.get_message(ignore_subscribe_messages=True)
+            
+            if message:
+                try:
+                    # Redis returns bytes or string, ensure we send JSON string
+                    data = message['data']
+                    if isinstance(data, bytes):
+                        data = data.decode('utf-8')
+                        
+                    # Construct valid JSON payload
+                    # Check if data is already JSON, otherwise wrap it
+                    try:
+                        json_data = json.loads(data)
+                        # Ensure it has a type field for the client to distinguish
+                        if message['channel'] == "shop_status":
+                            payload = {"type": "SHOP_STATUS", "payload": json_data}
+                        elif message['channel'] == "menu_updates":
+                            payload = {"type": "MENU_UPDATE", "payload": json_data}
+                        else:
+                            payload = {"type": "UNKNOWN", "payload": json_data}
+                    except json.JSONDecodeError:
+                        payload = {"type": "RAW", "channel": message['channel'], "data": data}
+
+                    await websocket.send_json(payload)
+                except Exception as e:
+                    logger.error(f"Error sending WebSocket message: {e}")
+            
+            # Prevent busy loop
+            await asyncio.sleep(0.1)
+            
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        pubsub.close()

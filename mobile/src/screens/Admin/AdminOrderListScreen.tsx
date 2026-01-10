@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { adminService, AdminOrder } from '../../services/adminService';
+import { AppHeader } from '../../components/AppHeader';
 
-const AdminOrderListScreen = ({ navigation, onSelectOrder }: any) => {
+const AdminOrderListScreen = ({ navigation: _navigation, onSelectOrder }: any) => {
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -20,8 +21,12 @@ const AdminOrderListScreen = ({ navigation, onSelectOrder }: any) => {
         }
     }, []);
 
+    const POLL_INTERVAL = 15000; // 15 seconds
+
     useEffect(() => {
         loadOrders();
+        const interval = setInterval(loadOrders, POLL_INTERVAL);
+        return () => clearInterval(interval);
     }, [loadOrders]);
 
     const handleRefresh = () => {
@@ -82,9 +87,7 @@ const AdminOrderListScreen = ({ navigation, onSelectOrder }: any) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>All Orders</Text>
-            </View>
+            <AppHeader title="All Orders" />
 
             {/* Filter Tabs */}
             <View style={styles.tabs}>

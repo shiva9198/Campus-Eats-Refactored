@@ -9,7 +9,7 @@ import logging
 import database
 import models
 import auth
-from routers import menu, orders, admin, health, payments, auth, upload, events
+from routers import menu, orders, admin, health, payments, auth, upload, events, branding
 from fastapi.staticfiles import StaticFiles
 from middleware.rate_limit import RateLimitMiddleware
 
@@ -132,6 +132,7 @@ app.include_router(health.router)
 app.include_router(upload.router) # Day 11: Image Uploads
 app.include_router(auth.router) # Day 12: JWT Auth
 app.include_router(events.router) # Redis: SSE Real-time Events
+app.include_router(branding.router) # Branding: Campus Logo & Name
 
 # Day 11: Mount Static Files (Safe Local Storage)
 import os

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from 'react-native';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppHeader } from '../../components/AppHeader';
 import { apiClient, getUserFriendlyError } from '../../api/client';
@@ -31,12 +31,12 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
     };
 
     const handleCollect = async () => {
-        if (!order) return;
-        
+        if (!order) { return; }
+
         setLoading(true);
         try {
-            await apiClient.patch(`/admin/orders/${order.id}/status`, { status: "Completed" });
-            Alert.alert("Success", "Order marked as Collected!");
+            await apiClient.patch(`/admin/orders/${order.id}/status`, { status: 'Completed' });
+            Alert.alert('Success', 'Order marked as Collected!');
             setOrder(null);
             setOtp('');
         } catch (err: any) {
@@ -49,9 +49,9 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
     return (
         <View style={styles.container}>
             <AppHeader title="Collect Order" showBack onBack={onBack} />
-            
+
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-                
+
                 {/* OTP Input Section */}
                 <View style={styles.inputCard}>
                     <Text style={styles.label}>Enter Customer OTP</Text>
@@ -64,9 +64,9 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
                         maxLength={4}
                         autoFocus
                     />
-                    <PrimaryButton 
-                        title="Find Order" 
-                        onPress={handleVerify} 
+                    <PrimaryButton
+                        title="Find Order"
+                        onPress={handleVerify}
                         loading={loading && !order}
                         disabled={loading || otp.length < 4}
                         style={{ marginTop: 12 }}
@@ -80,14 +80,14 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
                             <Text style={styles.orderId}>Order #{order.id}</Text>
                             <Text style={styles.statusBadge}>{order.status}</Text>
                         </View>
-                        
+
                         <View style={styles.divider} />
 
-                        <View style={styles. detailRow}>
+                        <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Customer:</Text>
                             <Text style={styles.detailValue}>{order.user?.full_name || order.user?.username || 'Unknown'}</Text>
                         </View>
-                        
+
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Amount:</Text>
                             <Text style={styles.detailValue}>₹{order.total_amount}</Text>
@@ -97,7 +97,7 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
                         {order.items.map((item: any, index: number) => (
                             <View key={index} style={styles.itemRow}>
                                 <Text style={styles.itemText}>
-                                    {item.quantity}x {item.item_name || "Item"}
+                                    {item.quantity}x {item.item_name || 'Item'}
                                 </Text>
                                 <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
                             </View>
@@ -105,8 +105,8 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
 
                         <View style={styles.divider} />
 
-                        <PrimaryButton 
-                            title="Confirm Collection" 
+                        <PrimaryButton
+                            title="Confirm Collection"
                             onPress={handleCollect}
                             loading={loading}
                             style={{ backgroundColor: '#10B981', marginTop: 16 }}
@@ -121,7 +121,7 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f8f8f8' },
     content: { padding: 20 },
-    
+
     inputCard: {
         backgroundColor: 'white',
         padding: 24,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         letterSpacing: 8,
         fontWeight: 'bold',
         marginBottom: 8,
-        color: '#333'
+        color: '#333',
     },
 
     resultCard: {
@@ -154,20 +154,20 @@ const styles = StyleSheet.create({
     },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     orderId: { fontSize: 18, fontWeight: 'bold', color: '#111' },
-    statusBadge: { 
-        backgroundColor: '#FEF3C7', 
-        color: '#D97706', 
-        paddingHorizontal: 8, 
-        paddingVertical: 4, 
-        borderRadius: 4, 
-        fontSize: 12, 
-        fontWeight: 'bold' 
+    statusBadge: {
+        backgroundColor: '#FEF3C7',
+        color: '#D97706',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     divider: { height: 1, backgroundColor: '#eee', marginVertical: 12 },
     detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     detailLabel: { color: '#666', fontSize: 14 },
     detailValue: { color: '#111', fontWeight: '600', fontSize: 14 },
-    
+
     itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, paddingLeft: 8 },
     itemText: { color: '#444', fontSize: 14 },
     itemPrice: { color: '#888', fontSize: 14 },

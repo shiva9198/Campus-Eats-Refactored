@@ -31,7 +31,7 @@ const AdminDashboardScreen = ({ onNavigate }: AdminDashboardProps) => {
             }
         } catch (error) {
             console.error(error);
-            // Alert.alert('Error', 'Failed to load dashboard data'); 
+            // Alert.alert('Error', 'Failed to load dashboard data');
             // Silent fail better for dashboard
         } finally {
             setLoading(false);
@@ -39,8 +39,12 @@ const AdminDashboardScreen = ({ onNavigate }: AdminDashboardProps) => {
         }
     }, []);
 
+    const POLL_INTERVAL = 15000; // 15 seconds
+
     useEffect(() => {
         loadData();
+        const interval = setInterval(loadData, POLL_INTERVAL);
+        return () => clearInterval(interval);
     }, [loadData]);
 
     const handleRefresh = () => {
@@ -106,8 +110,8 @@ const AdminDashboardScreen = ({ onNavigate }: AdminDashboardProps) => {
                         </Text>
                     </View>
                     <Switch
-                        trackColor={{ false: "#767577", true: "#81b0ff" }}
-                        thumbColor={shopOpen ? "#2196F3" : "#f4f3f4"}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={shopOpen ? '#2196F3' : '#f4f3f4'}
                         ios_backgroundColor="#3e3e3e"
                         onValueChange={toggleShopStatus}
                         value={shopOpen}

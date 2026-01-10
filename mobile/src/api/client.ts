@@ -1,19 +1,13 @@
 import axios, { AxiosError } from 'axios';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Day 5: Explicit Base URL for better reliability vs "localhost" magic
-// Android Emulator: 10.0.2.2
-// Physical Device: Replace with your LAN IP (e.g., http://192.168.1.5:8000)
-const ANDROID_URL = 'http://10.0.2.2:8000';
-const IOS_URL = 'http://localhost:8000';
-const BASE_URL = Platform.OS === 'android' ? ANDROID_URL : IOS_URL;
+import { API_BASE_URL, BRANDING_ENDPOINT } from '../config';
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 10000, // Day 10: 10-second timeout (no infinite spinners)
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true', // Needed for free-tier ngrok
   },
 });
 
@@ -68,9 +62,9 @@ apiClient.interceptors.response.use(
 // Day 10: Network Error Classification
 export const classifyNetworkError = (error: any): 'timeout' | 'offline' | 'server' | 'unknown' => {
   if (axios.isAxiosError(error)) {
-    if (error.code === 'ECONNABORTED') {return 'timeout';}
-    if (error.message === 'Network Error') {return 'offline';}
-    if (error.response && error.response.status >= 500) {return 'server';}
+    if (error.code === 'ECONNABORTED') { return 'timeout'; }
+    if (error.message === 'Network Error') { return 'offline'; }
+    if (error.response && error.response.status >= 500) { return 'server'; }
   }
   return 'unknown';
 };
@@ -94,7 +88,7 @@ const retryRequest = async (fn: () => Promise<any>, retries = 2): Promise<any> =
   try {
     return await fn();
   } catch (error) {
-    if (retries === 0) {throw error;}
+    if (retries === 0) { throw error; }
 
     const errorType = classifyNetworkError(error);
     // Don't retry on client errors (400-499 except timeout)
@@ -116,6 +110,12 @@ export const getMenu = async () => {
     return response.data;
   });
 };
+
+export const getShopStatus = async () => {
+  const response = await apiClient.get('/menu/status');
+  return response.data; // { status: "open"|"closed", is_open: boolean }
+};
+
 
 export const updateMenuItemAvailability = async (id: number, is_available: boolean) => {
   // No retry for PATCH (mutation)
@@ -149,4 +149,9 @@ export const createOrder = async (orderData: any) => {
 export const getMyOrders = async () => {
   const response = await apiClient.get('/orders/');
   return response.data;
+};
+
+export const fetchCampusBranding = async () => {
+  const response = await apiClient.get(BRANDING_ENDPOINT);
+  return response.data; // { name: string, logoUrl: string }
 };

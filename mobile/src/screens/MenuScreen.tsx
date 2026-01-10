@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { getMenu, updateMenuItemAvailability, getUserFriendlyError } from '../api/client';
+import { getMenu, updateMenuItemAvailability, getUserFriendlyError, getShopStatus } from '../api/client';
 import { MenuItem as MenuItemType } from '../types';
 import MenuItem from '../components/MenuItem';
 import { useCart } from '../context/CartContext';
@@ -19,6 +19,7 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isShopOpen, setIsShopOpen] = useState(true); // Default open
     const { addItem, state } = useCart();
 
     // Search & Filter State
@@ -32,8 +33,12 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
     const fetchMenu = async () => {
         try {
             setError(null);
-            const data = await getMenu();
-            setMenuItems(data);
+            const [menuData, statusData] = await Promise.all([
+                getMenu(),
+                getShopStatus(),
+            ]);
+            setMenuItems(menuData);
+            setIsShopOpen(statusData.is_open);
         } catch (err) {
             const errorMsg = getUserFriendlyError(err);
             setError(errorMsg);
@@ -46,6 +51,66 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
 
     useEffect(() => {
         fetchMenu();
+
+        // Release-Safe WebSocket Implementation
+        let ws: WebSocket | null = null;
+        let reconnectTimeout: NodeJS.Timeout;
+        let isMounted = true;
+
+        const connectWebSocket = () => {
+            if (!isMounted) {return;}
+
+            // Use centralized configuration
+            // Append /events/ws as per backend expectation
+            const wsUrl = `${require('../config').WS_BASE_URL}/events/ws`;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    if (__DEV__) {console.log('✅ WebSocket Connected');}
+                };
+
+                ws.onmessage = (e) => {
+                    try {
+                        const message = JSON.parse(e.data);
+                        if (message.type === 'SHOP_STATUS') {
+                            const isOpen = message.payload.status === 'open';
+                            setIsShopOpen(isOpen);
+                            if (__DEV__) {console.log('⚡ Instant Update: Shop is', isOpen ? 'OPEN' : 'CLOSED');}
+                        }
+                    } catch (err) {
+                        if (__DEV__) {console.error('WS Message Parse Error:', err);}
+                    }
+                };
+
+                ws.onerror = (e) => {
+                    if (__DEV__) {console.log('❌ WebSocket Error:', e.message);}
+                };
+
+                ws.onclose = (e) => {
+                    if (__DEV__) {console.log(`WebSocket Closed (Code: ${e.code}). Reconnecting in 2s...`);}
+
+                    // Auto-reconnect safety check
+                    if (isMounted) {
+                        reconnectTimeout = setTimeout(connectWebSocket, 2000);
+                    }
+                };
+            } catch (err) {
+                if (__DEV__) {console.error('WS Connection Failed:', err);}
+                if (isMounted) {
+                    reconnectTimeout = setTimeout(connectWebSocket, 5000);
+                }
+            }
+        };
+
+        connectWebSocket();
+
+        return () => {
+            isMounted = false;
+            if (ws) {ws.close();}
+            if (reconnectTimeout) {clearTimeout(reconnectTimeout);}
+        };
     }, []);
 
     // Extract Unique Categories
@@ -68,6 +133,14 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
         }
     };
 
+    const handleAddItem = (item: MenuItemType) => {
+        if (!isShopOpen && !isAdmin) {
+            Alert.alert('Shop Closed', 'Sorry, we are currently not accepting orders.');
+            return;
+        }
+        addItem(item);
+    };
+
     // Client-side Composite Filtering Logic
     const filteredItems = useMemo(() => {
         return menuItems.filter(item => {
@@ -76,8 +149,8 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
 
             // 2. Type Filter (Veg / Non-Veg)
             let matchesType = true;
-            if (activeType === 'Veg') matchesType = item.is_vegetarian;
-            if (activeType === 'Non-Veg') matchesType = !item.is_vegetarian;
+            if (activeType === 'Veg') {matchesType = item.is_vegetarian;}
+            if (activeType === 'Non-Veg') {matchesType = !item.is_vegetarian;}
 
             // 3. Category Filter
             const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
@@ -137,9 +210,16 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
         <View style={styles.container}>
             {/* 1. Reusable Header */}
             <AppHeader
-                title={isAdmin ? "Menu (Admin Mode)" : "Campus Eats"}
+                title={isAdmin ? 'Menu (Admin Mode)' : 'Campus Eats'}
                 rightAction={HeaderActions}
             />
+
+            {/* Shop Closed Banner */}
+            {!isShopOpen && (
+                <View style={styles.shopClosedBanner}>
+                    <Text style={styles.shopClosedText}>⛔ Shop is Closed. Taking a break!</Text>
+                </View>
+            )}
 
             {/* Admin Toggle (Secret) */}
             <TouchableOpacity onPress={() => setIsAdmin(!isAdmin)} style={{ height: 1, width: '100%' }} />
@@ -170,13 +250,13 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
                             key={type}
                             style={[
                                 styles.typeChip,
-                                activeType === type && styles.typeChipActive
+                                activeType === type && styles.typeChipActive,
                             ]}
                             onPress={() => setActiveType(type)}
                         >
                             <Text style={[
                                 styles.typeChipText,
-                                activeType === type && styles.typeChipTextActive
+                                activeType === type && styles.typeChipTextActive,
                             ]}>{type}</Text>
                         </TouchableOpacity>
                     ))}
@@ -189,13 +269,13 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
                             key={cat}
                             style={[
                                 styles.categoryChip,
-                                activeCategory === cat && styles.categoryChipActive
+                                activeCategory === cat && styles.categoryChipActive,
                             ]}
                             onPress={() => setActiveCategory(cat)}
                         >
                             <Text style={[
                                 styles.categoryChipText,
-                                activeCategory === cat && styles.categoryChipTextActive
+                                activeCategory === cat && styles.categoryChipTextActive,
                             ]}>{cat}</Text>
                         </TouchableOpacity>
                     ))}
@@ -208,7 +288,7 @@ const MenuScreen = ({ onGoToCart, onGoToProfile, onGoToHistory }: MenuScreenProp
                 renderItem={({ item }) => (
                     <MenuItem
                         item={item}
-                        onPress={() => addItem(item)}
+                        onPress={() => handleAddItem(item)}
                         isAdmin={isAdmin}
                         onToggleStock={handleToggleStock}
                     />
@@ -359,6 +439,20 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: 'white',
         fontSize: 16,
+        fontWeight: 'bold',
+    },
+    shopClosedBanner: {
+        backgroundColor: '#EF4444', // Red-500
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#B91C1C',
+    },
+    shopClosedText: {
+        color: 'white',
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });
