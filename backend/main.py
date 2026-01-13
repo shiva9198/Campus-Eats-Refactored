@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime
@@ -12,6 +13,9 @@ import auth
 from routers import menu, orders, admin, health, payments, auth, upload, events, branding
 from fastapi.staticfiles import StaticFiles
 from middleware.rate_limit import RateLimitMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env file
 
 
 # Day 11: Configure Logging (Safe & Minimal)
@@ -30,12 +34,19 @@ app = FastAPI(
     description="Backend for Campus Eats (Redis Integration: Per-User Rate Limiting + Pub/Sub)"
 )
 
-# CORS
+# CORS Configuration - SECURITY FIX: Locked down origins
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:8081,http://localhost:19006,http://localhost:8000"  # Dev defaults
+).split(",")
+
+logger.info(f"CORS allowed origins: {ALLOWED_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 

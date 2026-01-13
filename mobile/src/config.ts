@@ -7,12 +7,29 @@ const IOS_SIMULATOR_URL = 'http://localhost:8000';
 // NOTE: Update this if testing on a physical device in dev mode
 // const LAN_URL = 'http://192.168.1.5:8000';
 
-export const API_BASE_URL = __DEV__
-    ? Platform.OS === 'android'
-        ? ANDROID_EMULATOR_URL // Change to LAN_URL if on physical device
-        : IOS_SIMULATOR_URL
-    : 'https://161cc86451ef.ngrok-free.app'; // REMOTE TESTING (Ngrok)
-// : 'https://campus-eats-api.production.com'; // TODO: Revert this for actual store release
+// Production URL from environment (set in .env or build-time)
+// For React Native CLI, use react-native-config or hardcode for now
+const PROD_API_URL = 'https://campus-eats-api.onrender.com'; // UPDATE THIS AFTER DEPLOYMENT
+
+// Determine API URL based on environment
+const getApiUrl = (): string => {
+    if (__DEV__) {
+        // Development mode
+        return Platform.OS === 'android' ? ANDROID_EMULATOR_URL : IOS_SIMULATOR_URL;
+    }
+    // Production mode
+    if (!PROD_API_URL || PROD_API_URL.includes('placeholder')) {
+        console.error('WARNING: Production API URL not configured!');
+    }
+    return PROD_API_URL;
+};
+
+export const API_BASE_URL = getApiUrl();
+
+// Log API URL for debugging (only in dev)
+if (__DEV__) {
+    console.log('🔗 API URL:', API_BASE_URL);
+}
 
 // Derive WebSocket URL from API URL (replace http/https with ws/wss)
 export const WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws');

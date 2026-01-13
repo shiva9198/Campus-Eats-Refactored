@@ -33,3 +33,6 @@ yarn-debug.log*
 yarn-error.log*ngrok.log
 releases/
 backend/venv
+backend/.env
+
+.venv

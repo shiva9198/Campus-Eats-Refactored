@@ -1,14 +1,13 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import models, database, dependencies
 
 router = APIRouter(
     prefix="/payments",
     tags=["payments"],
 )
-
-from pydantic import BaseModel, Field
 
 class PaymentSubmit(BaseModel):
     order_id: int
@@ -68,9 +67,8 @@ def verify_payment(
         # Allow re-verification if needed? No, strict flow.
         raise HTTPException(status_code=400, detail=f"Order is not pending verification (Current: {order.status})")
 
-    # Generate OTP (Simple 4-digit for demo)
-    import random
-    otp = str(random.randint(1000, 9999))
+    # Generate cryptographically secure 6-digit OTP
+    otp = ''.join(secrets.choice('0123456789') for _ in range(6))
     
     order.status = "Paid"
     order.otp = otp
