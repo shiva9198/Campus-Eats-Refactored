@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-import database
+from db import session as database
 import os
+import time
 
 router = APIRouter(
     prefix="/health",
@@ -17,6 +18,7 @@ def health_check(db: Session = Depends(database.get_db)):
     - Checks Database connectivity
     - Returns version info
     """
+    start = time.time()
     health_status = {
         "status": "healthy",
         "service": "campus-eats-backend",
@@ -27,7 +29,9 @@ def health_check(db: Session = Depends(database.get_db)):
     try:
         # Simple query to verify DB connection
         db.execute(text("SELECT 1"))
+        db_latency = round((time.time() - start) * 1000, 2)
         health_status["database"] = "connected"
+        health_status["db_latency_ms"] = db_latency
     except Exception as e:
         health_status["status"] = "degraded"
         health_status["database"] = "disconnected"
@@ -37,3 +41,25 @@ def health_check(db: Session = Depends(database.get_db)):
         # Keeping it simple: 200 OK means API reachable. 
     
     return health_status
+
+@router.get("/detailed")
+def detailed_health(db: Session = Depends(database.get_db)):
+    """
+    Detailed system health - use for monitoring dashboards
+    Shows database connection pool statistics for load test monitoring
+    """
+    engine = db.get_bind()
+    pool = engine.pool
+    
+    return {
+        "status": "healthy",
+        "database": {
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "total_connections": pool.size() + pool.overflow(),
+            "max_connections": pool.size() + 30  # pool_size + max_overflow
+        },
+        "timestamp": time.time()
+    }
