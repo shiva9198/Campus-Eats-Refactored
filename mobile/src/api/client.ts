@@ -37,7 +37,8 @@ apiClient.interceptors.response.use(
 
       // Day 14: Auto-logout on 401
       if (status === 401) {
-        console.warn('[API] 401 Unauthorized - Clearing token');
+        // Note: 401s are expected for unauthenticated requests, use log not warn
+        console.log('[API] 401 Unauthorized - Clearing token');
         await AsyncStorage.removeItem('token');
         // Note: UI update happens reactively via AuthContext checking AsyncStorage or re-render
         // Ideally, we'd trigger a global event here if immediate UI refresh is needed
