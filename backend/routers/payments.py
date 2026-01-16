@@ -1,8 +1,10 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-import models, database, dependencies
+from db import models, session as database
+from core import dependencies
+from core.config import upload_payment_proof, generate_signed_url
 
 router = APIRouter(
     prefix="/payments",
@@ -24,11 +26,19 @@ class PaymentReject(BaseModel):
     reason: str
 
 @router.post("/submit")
-def submit_payment(payment: PaymentSubmit, db: Session = Depends(database.get_db)):
+def submit_payment(
+    payment: PaymentSubmit, 
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_active_user)
+):
     """Student submits payment proof (Manual UTR Only)"""
     order = db.query(models.Order).filter(models.Order.id == payment.order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # SECURITY: Users can only submit payment for their own orders
+    if order.user_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to submit payment for this order")
     
     # Secure Rule: Status -> Pending_Verification
     current_status = order.status
@@ -105,4 +115,106 @@ def reject_payment(
     
     db.commit()
     return {"success": True, "message": "Payment rejected", "status": order.status}
+
+
+# NEW: Cloudinary Payment Proof Endpoints
+
+@router.post("/upload-proof")
+async def upload_payment_proof_endpoint(
+    order_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_active_user)
+):
+    """Upload payment screenshot for an order"""
+    
+    # Validate order exists and belongs to user
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order.user_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Validate order status
+    if order.status not in ["Pending", "Payment_Rejected"]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot upload proof for order in '{order.status}' state"
+        )
+    
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files allowed")
+    
+    # Validate file size (max 5MB)
+    file_bytes = await file.read()
+    if len(file_bytes) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 5MB limit")
+    
+    try:
+        # Upload to Cloudinary (no init_cloudinary call - already done at startup)
+        public_id = upload_payment_proof(file_bytes, order_id, current_user["id"])
+        
+        # Store ONLY public_id, not URL
+        order.verification_proof = public_id
+        # REVIEW FIX: Reset status to Pending_Verification on re-upload
+        order.status = "Pending_Verification"
+        order.payment_submitted = True
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Payment proof uploaded successfully",
+            "public_id": public_id
+        }
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+@router.get("/{order_id}/payment-proof")
+def get_payment_proof_url(
+    order_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_active_user)
+):
+    """Get signed URL for payment proof (owner or admin only)"""
+    
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Authorization: Admin OR order owner
+    is_authorized = (
+        current_user["role"] == "admin" or 
+        order.user_id == current_user["id"]
+    )
+    
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to view payment proof")
+    
+    if not order.verification_proof:
+        raise HTTPException(status_code=404, detail="No payment proof uploaded")
+    
+    # Check if verification_proof looks like a Cloudinary public_id (not a UTR)
+    # Simple heuristic: Cloudinary IDs contain "payment_proofs/"
+    if "payment_proofs/" not in order.verification_proof:
+        raise HTTPException(
+            status_code=404, 
+            detail="Payment proof is UTR-based, not an image"
+        )
+    
+    try:
+        # Generate signed URL (expires in 5 minutes) - no init call needed
+        signed_url = generate_signed_url(order.verification_proof, expiry_seconds=300)
+        
+        return {
+            "url": signed_url,
+            "expires_in_seconds": 300
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate URL: {str(e)}")
 
