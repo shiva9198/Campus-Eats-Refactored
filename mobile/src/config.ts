@@ -5,17 +5,23 @@ const ANDROID_EMULATOR_URL = 'http://10.0.2.2:8000';
 const IOS_SIMULATOR_URL = 'http://localhost:8000';
 
 // NOTE: Update this if testing on a physical device in dev mode
-// const LAN_URL = 'http://192.168.1.5:8000';
+const LAN_URL = 'http://192.168.0.112:8000';
 
 // Production URL from environment (set in .env or build-time)
 // For React Native CLI, use react-native-config or hardcode for now
-const PROD_API_URL = 'https://campus-eats-api.onrender.com'; // UPDATE THIS AFTER DEPLOYMENT
+// TEMPORARY: Using ngrok for physical device testing with local backend
+const PROD_API_URL = 'https://0106b33e8ef2.ngrok-free.app'; // ngrok tunnel to localhost:8000
 
 // Determine API URL based on environment
 const getApiUrl = (): string => {
     if (__DEV__) {
         // Development mode
-        return Platform.OS === 'android' ? ANDROID_EMULATOR_URL : IOS_SIMULATOR_URL;
+        if (Platform.OS === 'android') {
+            // Return PROD_API_URL (ngrok) for real device testing as requested by user.
+            // This allows the app to connect from any network (e.g. 5G/LTE).
+            return PROD_API_URL;
+        }
+        return IOS_SIMULATOR_URL;
     }
     // Production mode
     if (!PROD_API_URL || PROD_API_URL.includes('placeholder')) {
