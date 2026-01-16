@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from redis_client import redis_client
-import dependencies
+from services.redis import redis_client
+from core import dependencies
 import logging
 
 router = APIRouter(
@@ -106,6 +106,11 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if message:
                 try:
+                    # Check if websocket is still connected before sending
+                    if websocket.client_state.name != "CONNECTED":
+                        logger.info("WebSocket client disconnected, breaking loop")
+                        break
+                        
                     # Redis returns bytes or string, ensure we send JSON string
                     data = message['data']
                     if isinstance(data, bytes):
@@ -127,7 +132,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     await websocket.send_json(payload)
                 except Exception as e:
-                    logger.error(f"Error sending WebSocket message: {e}")
+                    logger.warning(f"Error sending WebSocket message: {e}")
+                    break  # Exit loop on send error
             
             # Prevent busy loop
             await asyncio.sleep(0.1)
