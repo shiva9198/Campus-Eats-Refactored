@@ -2,20 +2,41 @@ import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime
+
+from dotenv import load_dotenv
+
+# Load environment variables before importing modules that depend on them (e.g., JWT_SECRET in core.auth)
+load_dotenv()
+
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import logging
-import database
-import models
-import auth
-from routers import menu, orders, admin, health, payments, auth, upload, events, branding
+from db import session as database
+from db import models
+from core import auth
+from routers import menu, orders, admin, health, payments, auth as auth_router, upload, events, branding, config
 from fastapi.staticfiles import StaticFiles
 from middleware.rate_limit import RateLimitMiddleware
-from dotenv import load_dotenv
 
-load_dotenv()  # Load .env file
+# Initialize Sentry for error monitoring
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        environment=os.getenv("ENVIRONMENT", "production"),
+        traces_sample_rate=0.0,  # Disable performance tracing
+        profiles_sample_rate=0.0,  # Disable profiling
+        integrations=[
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+        ],
+    )
 
 
 # Day 11: Configure Logging (Safe & Minimal)
@@ -121,11 +142,18 @@ async def startup_event():
     logger.info(f"Version: 2.0.0-redis")
     
     # Check Redis connection
-    from redis_client import redis_client
+    from services.redis import redis_client
     if redis_client.is_available():
         logger.info("✅ Redis: Connected (Rate limiting + Caching + Pub/Sub enabled)")
     else:
         logger.warning("⚠️ Redis: Unavailable (Graceful degradation active)")
+    
+    # Initialize Cloudinary
+    from core.config import init_cloudinary
+    if init_cloudinary():
+        logger.info("✅ Cloudinary: Configured (Secure payment proofs enabled)")
+    else:
+        logger.warning("⚠️ Cloudinary: Not configured (Payment proof uploads disabled)")
     
     logger.info("=" * 60)
 
@@ -141,7 +169,7 @@ app.include_router(payments.router)
 app.include_router(admin.router)
 app.include_router(health.router)
 app.include_router(upload.router) # Day 11: Image Uploads
-app.include_router(auth.router) # Day 12: JWT Auth
+app.include_router(auth_router.router) # Day 12: JWT Auth
 app.include_router(events.router) # Redis: SSE Real-time Events
 app.include_router(branding.router) # Branding: Campus Logo & Name
 
@@ -151,6 +179,8 @@ os.makedirs("static/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+
+
 @app.get("/")
 def read_root():
     return {
@@ -158,3 +188,9 @@ def read_root():
         "version": "2.0.0-redis",
         "features": "Redis Integration: Per-User Rate Limiting + Pub/Sub + Caching"
     }
+
+# Test endpoint for Sentry (remove before production or protect with admin auth)
+@app.get("/test-sentry")
+def test_sentry():
+    """Trigger test error to verify Sentry integration"""
+    raise Exception("Test Sentry Error - Backend Integration Working")
