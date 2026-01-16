@@ -11,8 +11,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
-    const [username, setUsername] = useState('student');
-    const [password, setPassword] = useState('student123'); // Default for easy testing
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const { signIn } = useAuth();
 
