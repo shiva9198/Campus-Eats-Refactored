@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-import models, schemas, database, auth, dependencies
+from db import models, schemas, session as database
+from core import auth, dependencies
 
 router = APIRouter(
     prefix="/orders",
@@ -123,5 +124,10 @@ def get_order(
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # SECURITY: Users can only view their own orders (admins can view all)
+    if current_user["role"] != "admin" and order.user_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to view this order")
+    
     return order
 
