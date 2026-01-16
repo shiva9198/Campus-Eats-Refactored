@@ -28,10 +28,11 @@ async def upload_image(file: UploadFile = File(...)):
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPG, PNG, WEBP allowed.")
 
-    # 2. Validate File Size (Chunk read for safety)
-    # Note: For strict safety, we'd read chunks. For simplicity here:
-    # We trust the stream but better to implement size limit in middleware or load balancer.
-    # Here we just proceed. Python's temp file storage handles large uploads safely.
+    # 2. Validate File Size (enforce MAX_FILE_SIZE limit)
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_FILE_SIZE // 1024 // 1024}MB.")
+    await file.seek(0)  # Reset file pointer for saving
 
     # 3. Generate Secure Filename
     secure_filename = f"{uuid.uuid4()}{file_ext}"
