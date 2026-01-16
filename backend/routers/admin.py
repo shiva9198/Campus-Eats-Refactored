@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
-import models, schemas, database, dependencies
-from pubsub import publish_order_update
-from cache import get_cached, invalidate_cache
+from db import models, schemas, session as database
+from core import dependencies
+from services.pubsub import publish_order_update
+from services.cache import get_cached, invalidate_cache
 
 router = APIRouter(
     prefix="/admin",
@@ -111,7 +112,7 @@ def save_setting(
 
     # Publish shop status update if changed
     if setting.key == "shop_status":
-        from pubsub import publish_shop_status
+        from services.pubsub import publish_shop_status
         is_open = (setting.value != "closed")
         publish_shop_status(is_open)
         
