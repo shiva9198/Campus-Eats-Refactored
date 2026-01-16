@@ -57,11 +57,11 @@ const AdminCollectionScreen = ({ onBack }: AdminCollectionScreenProps) => {
                     <Text style={styles.label}>Enter Customer OTP</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="e.g. 1234"
+                        placeholder="e.g. 123456"
                         value={otp}
                         onChangeText={setOtp}
                         keyboardType="number-pad"
-                        maxLength={4}
+                        maxLength={6}
                         autoFocus
                     />
                     <PrimaryButton
