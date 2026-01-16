@@ -96,6 +96,11 @@ export const adminService = {
         const response = await client.delete(`/menu/${id}`);
         return response.data;
     },
+
+    getPaymentProofUrl: async (orderId: number) => {
+        const response = await client.get(`/payments/${orderId}/payment-proof`);
+        return response.data;
+    },
 };
 
 
