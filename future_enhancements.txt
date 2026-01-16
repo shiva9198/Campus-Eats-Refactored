@@ -1,5 +1,0 @@
-Batching is King: Your algorithm must refuse orders if the queue exceeds 20 minutes. "Kitchen Full - Try again in 10 mins." Better to deny an order than manage a hungry, angry student.
-The "Pre-Cook" Prediction: Data is your only asset. Tell the owner: "Every Tuesday at 11 AM, 40 people order Vada Pav. Fry 40 Vada Pavs at 10:50 AM." If you can predict demand, you solve the stove bottleneck.
-Monetization? Since you don't take commissions, how do you eat?
-Subscription: ₹10/month "Premium" for students to get "Priority Cooking" (Unethical but effective?).
-Data: Sell consumption trends to brands (e.g., "Nestle, we sell 500 Maggis here, give us a bulk discount").
