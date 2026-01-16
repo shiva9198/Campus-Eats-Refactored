@@ -40,7 +40,7 @@ const PaymentScreen = ({ orderId, total, onPaymentSubmitted }: PaymentScreenProp
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
         >
             <ScrollView contentContainerStyle={styles.container}>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     input: {
         backgroundColor: 'white', width: '100%', padding: 16, borderRadius: 12,
         borderWidth: 1, borderColor: '#ddd', fontSize: 16, marginBottom: 24,
-        color: '#333', fontWeight: 'bold'
+        color: '#333', fontWeight: 'bold',
     },
     button: { backgroundColor: '#F97316', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 12, width: '100%', alignItems: 'center', shadowColor: '#F97316', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
     buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
