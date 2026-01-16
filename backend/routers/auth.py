@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-import database
-import models
-import models, schemas
-import auth
+from db import session as database
+from db import models
+from db import schemas
+from core import auth
 from datetime import timedelta
 import logging
 
@@ -57,11 +57,12 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_d
     
     # Hash password
     hashed_password = auth.get_password_hash(user.password)
+    # SECURITY: Always set role to 'student' - never accept from user input
     db_user = models.User(
         username=user.username,
         email=user.email,
         hashed_password=hashed_password,
-        role=user.role
+        role="student"
     )
     db.add(db_user)
     db.commit()
