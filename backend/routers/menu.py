@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-import models, schemas, database, auth, dependencies
-from cache import get_cached, invalidate_cache
-from pubsub import publish_menu_update
+from db import models, schemas, session as database
+from core import auth, dependencies
+from services.cache import get_cached, invalidate_cache, menu_cache
+from services.pubsub import publish_menu_update
 
 router = APIRouter(
     prefix="/menu",
@@ -12,13 +13,25 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.MenuItem])
 def get_menu(db: Session = Depends(database.get_db)):
-    """Get menu with Redis caching (60s TTL)"""
-    def fetch_menu():
-        # Return ALL items (Day 5 requirement: Show Out of Stock items)
-        items = db.query(models.MenuItem).all()
-        return [schemas.MenuItem.model_validate(item).model_dump() for item in items]
+    """
+    Get menu with multi-layer caching for performance:
+    1. In-memory cache (instant, 10 min TTL)
+    2. Redis cache (fast, 60s TTL)
+    3. Database query (fallback)
+    """
+    # Try in-memory cache first (fastest)
+    cached_menu = menu_cache.get()
+    if cached_menu:
+        return cached_menu
     
-    return get_cached("cache:menu:all", 60, fetch_menu)
+    # Fetch from db.session (Redis caching happens inside get_cached)
+    items = db.query(models.MenuItem).all()
+    menu_data = [schemas.MenuItem.model_validate(item).model_dump() for item in items]
+    
+    # Store in in-memory cache for next request
+    menu_cache.set(menu_data)
+    
+    return menu_data
 
 @router.get("/status")
 def get_shop_status(db: Session = Depends(database.get_db)):
@@ -47,8 +60,9 @@ def create_menu_item(
         db.commit()
         db.refresh(db_item)
         
-        # Invalidate cache and publish update
+        # Invalidate both caches and publish update
         invalidate_cache("cache:menu:all")
+        menu_cache.invalidate()
         publish_menu_update("created", db_item.id)
         
         return db_item
@@ -76,8 +90,9 @@ def update_menu_item(
     db.commit()
     db.refresh(db_item)
     
-    # Invalidate cache and publish update
+    # Invalidate both caches and publish update
     invalidate_cache("cache:menu:all")
+    menu_cache.invalidate()
     publish_menu_update("updated", menu_item_id)
     
     return db_item
@@ -100,8 +115,9 @@ def update_menu_item_availability(
     db.commit()
     db.refresh(item)
     
-    # Invalidate cache and publish update
+    # Invalidate both caches and publish update
     invalidate_cache("cache:menu:all")
+    menu_cache.invalidate()
     publish_menu_update("updated", menu_item_id)
     
     return item
@@ -126,8 +142,9 @@ def delete_menu_item(
         db.delete(item)
         db.commit()
         
-        # Invalidate cache and publish update
+        # Invalidate both caches and publish update
         invalidate_cache("cache:menu:all")
+        menu_cache.invalidate()
         publish_menu_update("deleted", menu_item_id)
         
         return {"message": f"Menu item '{item.name}' deleted successfully"}
