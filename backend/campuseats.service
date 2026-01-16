@@ -1,0 +1,60 @@
+# SystemD service for Campus Eats Backend
+# File: /etc/systemd/system/campuseats.service
+# 
+# Installation instructions:
+# 1. Copy this file to /etc/systemd/system/campuseats.service
+# 2. sudo systemctl daemon-reload
+# 3. sudo systemctl enable campuseats
+# 4. sudo systemctl start campuseats
+# 5. sudo systemctl status campuseats
+#
+# Useful commands:
+# Start:   sudo systemctl start campuseats
+# Stop:    sudo systemctl stop campuseats
+# Restart: sudo systemctl restart campuseats
+# Reload:  sudo systemctl reload campuseats (graceful, no downtime)
+# Status:  sudo systemctl status campuseats
+# Logs:    sudo journalctl -u campuseats -f
+
+[Unit]
+Description=Campus Eats Food Ordering Backend
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+User=shiva
+Group=shiva
+WorkingDirectory=/Users/shiva/Documents/github_projects/Campus-Eats-Clone/backend
+Environment="PATH=/Users/shiva/Documents/github_projects/Campus-Eats-Clone/backend/venv/bin"
+Environment="DATABASE_URL=postgresql://shiva@localhost/campuseats"
+
+# Start command
+ExecStart=/Users/shiva/Documents/github_projects/Campus-Eats-Clone/backend/venv/bin/gunicorn \
+    --config gunicorn.conf.py \
+    main:app
+
+# Reload command (graceful reload without downtime)
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitInterval=60
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=campuseats
+
+[Install]
+WantedBy=multi-user.target
