@@ -117,22 +117,27 @@ mobile/
 ```
 backend/
 ├── main.py                          # FastAPI app, middleware, routers
-├── database.py                      # PostgreSQL connection (pg8000)
-├── models.py                        # SQLAlchemy ORM models
-├── schemas.py                       # Pydantic request/response schemas
-├── auth.py                          # JWT token generation/validation
-├── redis_client.py                  # Redis connection (rate limiting, caching, pub/sub)
+├── core/                            # Core configuration & auth
+│   ├── config.py                    # Environment settings
+│   ├── auth.py                      # JWT utilities
+│   └── dependencies.py              # Dependency injection
+├── db/                              # Database layer
+│   ├── session.py                   # Engine & Session
+│   ├── models.py                    # SQLAlchemy Models
+│   └── schemas.py                   # Pydantic Schemas
+├── services/                        # Business logic services
+│   └── redis.py                     # Redis interface
 ├── middleware/
-│   └── rate_limit.py                # Per-user rate limiting middleware
-├── routers/
-│   ├── auth.py                      # POST /auth/login, /auth/register
-│   ├── menu.py                      # GET/POST/PATCH /menu
-│   ├── orders.py                    # POST /orders, GET /orders/{id}
-│   ├── payments.py                  # POST /payments/submit-proof
-│   ├── admin.py                     # PATCH /admin/orders/{id}/status
-│   ├── upload.py                    # POST /upload (payment proof)
-│   ├── events.py                    # GET /events/stream (SSE)
-│   └── health.py                    # GET /health
+│   └── rate_limit.py                # Rate limiting middleware
+├── routers/                         # API Routes
+│   ├── auth.py
+│   ├── menu.py
+│   ├── orders.py
+│   ├── payments.py
+│   ├── admin.py
+│   ├── upload.py
+│   ├── events.py
+│   └── health.py
 └── static/
     └── uploads/                     # Local payment proof storage
 ```
@@ -210,6 +215,15 @@ npm start
 # In another terminal, run on emulator
 npx react-native run-android
 ```
+
+### Real Device Setup (Important)
+
+To run on a physical device, you must expose the backend via ngrok and update the app config:
+
+1.  **Start Backend**: `uvicorn main:app --host 0.0.0.0 --reload`
+2.  **Start Ngrok**: `ngrok http 8000`
+3.  **Update Config**: Run `./update_ngrok_url.sh` in the project root.
+4.  **Install**: `cd mobile/android && ./gradlew installRelease`
 
 ---
 
