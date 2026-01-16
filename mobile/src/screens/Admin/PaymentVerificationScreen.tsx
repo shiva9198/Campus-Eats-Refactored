@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { adminService } from '../../services/adminService';
 import { AppHeader } from '../../components/AppHeader';
 
@@ -7,6 +7,40 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
     const [reason, setReason] = useState('');
     const [loading, setLoading] = useState(false);
     const [action, setAction] = useState<'none' | 'rejecting'>('none');
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [checkingProof, setCheckingProof] = useState(false);
+
+    useEffect(() => {
+        let mounted = true;
+        let timeoutId: any;
+
+        const fetchProof = async () => {
+            if (order.verification_proof && order.verification_proof.startsWith('payment_proofs/')) {
+                if (mounted) {setCheckingProof(true);}
+                try {
+                    const data = await adminService.getPaymentProofUrl(order.id);
+                    if (mounted) {
+                        setImageUrl(data.url);
+                        // Auto-refresh before expiry (4.5 mins)
+                        timeoutId = setTimeout(fetchProof, 270000);
+                    }
+                } catch (error) {
+                    console.log('Failed to fetch proof URL:', error);
+                } finally {
+                    if (mounted) {setCheckingProof(false);}
+                }
+            } else {
+                if (mounted) {setImageUrl(null);}
+            }
+        };
+
+        fetchProof();
+
+        return () => {
+            mounted = false;
+            if (timeoutId) {clearTimeout(timeoutId);}
+        };
+    }, [order.id, order.verification_proof]);
 
     const handleVerify = async () => {
         // ADMIN SAFEGUARD: Confirmation Dialog
@@ -19,8 +53,8 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
                     text: 'Yes, I Validated It',
                     onPress: async () => {
                         performVerification();
-                    }
-                }
+                    },
+                },
             ]
         );
     };
@@ -69,8 +103,21 @@ const PaymentVerificationScreen = ({ order, onBack, onVerified }: any) => {
                 <Text style={styles.sectionTitle}>Verification Details</Text>
 
                 <View style={styles.utrBox}>
-                    <Text style={styles.utrLabel}>UTR / REFERENCE NO</Text>
-                    <Text style={styles.utrValue}>{order.verification_proof || 'MISSING'}</Text>
+                    <Text style={styles.utrLabel}>
+                        {imageUrl ? 'PAYMENT PROOF SCAN' : 'UTR / REFERENCE NO'}
+                    </Text>
+
+                    {checkingProof ? (
+                        <ActivityIndicator size="large" color="#1976D2" style={{ marginVertical: 20 }} />
+                    ) : imageUrl ? (
+                        <Image
+                            source={{ uri: imageUrl }}
+                            style={{ width: '100%', height: 400, borderRadius: 8, backgroundColor: '#f0f0f0' }}
+                            resizeMode="contain"
+                        />
+                    ) : (
+                        <Text style={styles.utrValue}>{order.verification_proof || 'MISSING'}</Text>
+                    )}
                 </View>
 
                 <View style={styles.details}>
