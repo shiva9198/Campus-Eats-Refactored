@@ -16,12 +16,9 @@ const PROD_API_URL = 'https://0106b33e8ef2.ngrok-free.app'; // ngrok tunnel to l
 const getApiUrl = (): string => {
     if (__DEV__) {
         // Development mode
-        if (Platform.OS === 'android') {
-            // Return PROD_API_URL (ngrok) for real device testing as requested by user.
-            // This allows the app to connect from any network (e.g. 5G/LTE).
-            return PROD_API_URL;
-        }
-        return IOS_SIMULATOR_URL;
+        // Return PROD_API_URL (ngrok) for both Android and iOS real device testing.
+        // If testing on Simulator with localhost, you can manually revert this or ensure ngrok is running.
+        return PROD_API_URL;
     }
     // Production mode
     if (!PROD_API_URL || PROD_API_URL.includes('placeholder')) {
